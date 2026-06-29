@@ -23,6 +23,18 @@ export function isCanonicalFaceShape(value: string): value is CanonicalFaceShape
   return (CANONICAL_FACE_SHAPES as readonly string[]).includes(value)
 }
 
+// ── Face shape display names (Chinese) ──
+
+export const FACE_SHAPE_DISPLAY_NAMES: Record<CanonicalFaceShape, string> = {
+  round: '圆形脸',
+  square: '方形脸',
+  oval: '椭圆形脸',
+  heart: '心形脸',
+  diamond: '菱形脸',
+  oblong: '长形脸',
+  triangle: '三角形脸',
+}
+
 // ── Face geometry (mirror of main-site FaceGeometryAnalysis) ──
 
 export interface FaceGeometryRatios {
@@ -49,68 +61,63 @@ export interface FaceGeometryAnalysis {
   warnings: string[]
 }
 
-// ── Analysis results ──
+// ── Analysis report ──
 
-export interface FaceAnalysisBasicResult {
-  faceShape: CanonicalFaceShape
-  faceShapeDisplayName: string
-  confidence: number
-  summary: string
-  keyFeatures: string[]
-  geometry?: FaceGeometryAnalysis
+export interface FaceFeatureMetric {
+  label: string
+  value: string
+  level?: 'high' | 'medium' | 'low'
 }
 
-export interface FrameRecommendation {
+export interface FrameRecommendationItem {
+  rank: number
   type: string
   displayName: string
-  score: number
+  matchScore: number
   reason: string
   stylingNote: string
 }
 
-export interface FaceAnalysisFullResult extends FaceAnalysisBasicResult {
-  bestFrames: string[]
-  framesToAvoid: string[]
-  styleGuide: string
-  catalogRecommendedStyles?: string[]
-  catalogAvoidStyles?: string[]
-  frameRecommendations?: FrameRecommendation[]
+export interface SizeSuggestion {
+  frameWidth: string
+  lensHeight: string
+  templeLength: string
+  wearingTips: string[]
 }
 
-export interface FaceAnalysisTaskResponse {
+export interface FaceAnalysisReport {
   id: string
-  status: string
-  userImageUrl: string
-  detectedShape?: string | null
-  confidence?: number | null
-  basicResult?: FaceAnalysisBasicResult | null
-  fullResult?: FaceAnalysisFullResult | null
-  reportUnlocked: boolean
-  errorMessage?: string | null
   createdAt: string
-  progress?: number
-  isNewCompletion?: boolean
+  faceShape: CanonicalFaceShape
+  faceShapeDisplayName: string
+  confidence: number
+  photoUrl?: string
+  summary: string
+  keyFeatures: FaceFeatureMetric[]
+  bestFrames: FrameRecommendationItem[]
+  avoidFrames: string[]
+  sizeSuggestion?: SizeSuggestion
+  unlocked: boolean
+  geometry?: FaceGeometryAnalysis
 }
 
-// ── App flow steps ──
+// ── Navigation ──
 
-export const APP_STEPS = ['home', 'photo', 'analyzing', 'result'] as const
-export type AppStep = (typeof APP_STEPS)[number]
+export type TabKey = 'home' | 'report' | 'profile'
+
+export type SubPage =
+  | 'upload'
+  | 'analyzing'
+  | 'report-overview'
+  | 'frame-recommendation'
+  | 'size-suggestion'
+  | 'history'
 
 // ── Image input (platform-agnostic) ──
 
-/**
- * Platform-agnostic image input.
- * On web: backed by File / Blob / ImageBitmap.
- * On WeChat: backed by tempFilePath ArrayBuffer.
- */
 export interface ImageInput {
-  /** Raw pixel/encoded data, platform-dependent */
   readonly data: unknown
-  /** Width in pixels (if known) */
   readonly width?: number
-  /** Height in pixels (if known) */
   readonly height?: number
-  /** MIME type or format hint */
   readonly mimeType?: string
 }

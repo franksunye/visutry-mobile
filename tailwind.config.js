@@ -1,27 +1,53 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
-  darkMode: 'class',
   theme: {
     extend: {
       colors: {
-        // Align with main site palette
+        // ── 品牌色 ──
         brand: {
-          50: '#f0f9ff',
-          100: '#e0f2fe',
-          200: '#bae6fd',
-          300: '#7dd3fc',
-          400: '#38bdf8',
-          500: '#0ea5e9',
-          600: '#0284c7',
-          700: '#0369a1',
-          800: '#075985',
-          900: '#0c4a6e',
+          DEFAULT: '#FFDB4D',
+          50: '#FFFBEA',
+          100: '#FFF7D6',
+          200: '#FFEFAD',
+          300: '#FFE484',
+          400: '#FFDB4D',
+          500: '#FFD11A',
+          600: '#E6B800',
+          700: '#B39200',
+          800: '#806B00',
+          900: '#4D4000',
+        },
+        // ── 辅助色 ──
+        lime: {
+          DEFAULT: '#8BF44B',
+        },
+        pink: {
+          DEFAULT: '#FF689A',
+          light: '#FFB3CC',
+          dark: '#E54E85',
+        },
+        // ── 中性色 ──
+        ink: {
+          DEFAULT: '#1A1A1A',
+          primary: '#2B2B2B',
+          secondary: '#666666',
+          tertiary: '#ABABAB',
+          border: '#EDEDED',
+          bg: '#FFF7D6',
+          white: '#FFFFFF',
         },
       },
-      // Mobile-first: design for small screens, scale up
+      borderRadius: {
+        btn: '12px',
+        card: '16px',
+        screen: '20px',
+      },
       screens: {
         xs: '375px',
+      },
+      fontSize: {
+        caption: ['11px', '1.4'],
       },
     },
   },

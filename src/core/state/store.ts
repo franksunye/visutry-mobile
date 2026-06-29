@@ -1,66 +1,70 @@
 /**
  * App state — Zustand store.
  *
- * This store lives in the core layer and holds only platform-agnostic
- * state (current step, analysis results, errors). UI state that is
- * web-specific (e.g. modal open/close) should live in the ui layer.
+ * Holds platform-agnostic state: active tab, sub-page navigation,
+ * current report, history, and captured image.
  */
 
 import { create } from 'zustand'
 import type {
-  AppStep,
-  FaceGeometryAnalysis,
-  FaceAnalysisTaskResponse,
+  TabKey,
+  SubPage,
+  FaceAnalysisReport,
+  ImageInput,
 } from '../types'
-import type { StyleRecommendation } from '../face-shape/analyzer'
 
 interface AppState {
   // ── Navigation ──
-  step: AppStep
-  setStep: (step: AppStep) => void
+  activeTab: TabKey
+  subPage: SubPage | null
+  setActiveTab: (tab: TabKey) => void
+  navigateTo: (page: SubPage) => void
+  goBack: () => void
 
-  // ── Local face analysis (on-device, free) ──
-  localGeometry: FaceGeometryAnalysis | null
-  setLocalGeometry: (geometry: FaceGeometryAnalysis | null) => void
+  // ── Captured image (for analysis flow) ──
+  capturedImage: ImageInput | null
+  capturedImageUrl: string | null
+  setCapturedImage: (img: ImageInput | null, url: string | null) => void
 
-  // ── Style recommendation (derived from localGeometry) ──
-  recommendation: StyleRecommendation | null
-  setRecommendation: (rec: StyleRecommendation | null) => void
+  // ── Current report ──
+  currentReport: FaceAnalysisReport | null
+  setCurrentReport: (report: FaceAnalysisReport | null) => void
 
-  // ── Remote VLM analysis (main site, paid) ──
-  remoteTask: FaceAnalysisTaskResponse | null
-  setRemoteTask: (task: FaceAnalysisTaskResponse | null) => void
+  // ── History ──
+  history: FaceAnalysisReport[]
+  addToHistory: (report: FaceAnalysisReport) => void
+  clearHistory: () => void
 
-  // ── Error handling ──
+  // ── Error ──
   error: string | null
   setError: (error: string | null) => void
-
-  // ── Loading flags ──
-  isAnalyzing: boolean
-  setAnalyzing: (analyzing: boolean) => void
-
-  // ── Reset to initial state ──
-  reset: () => void
-}
-
-const initialState = {
-  step: 'home' as AppStep,
-  localGeometry: null,
-  recommendation: null,
-  remoteTask: null,
-  error: null,
-  isAnalyzing: false,
 }
 
 export const useAppStore = create<AppState>((set) => ({
-  ...initialState,
+  // ── Navigation ──
+  activeTab: 'home',
+  subPage: null,
+  setActiveTab: (activeTab) => set({ activeTab, subPage: null }),
+  navigateTo: (subPage) => set({ subPage }),
+  goBack: () => set({ subPage: null }),
 
-  setStep: (step) => set({ step }),
-  setLocalGeometry: (localGeometry) => set({ localGeometry }),
-  setRecommendation: (recommendation) => set({ recommendation }),
-  setRemoteTask: (remoteTask) => set({ remoteTask }),
+  // ── Captured image ──
+  capturedImage: null,
+  capturedImageUrl: null,
+  setCapturedImage: (capturedImage, capturedImageUrl) =>
+    set({ capturedImage, capturedImageUrl }),
+
+  // ── Current report ──
+  currentReport: null,
+  setCurrentReport: (currentReport) => set({ currentReport }),
+
+  // ── History ──
+  history: [],
+  addToHistory: (report) =>
+    set((state) => ({ history: [report, ...state.history] })),
+  clearHistory: () => set({ history: [] }),
+
+  // ── Error ──
+  error: null,
   setError: (error) => set({ error }),
-  setAnalyzing: (isAnalyzing) => set({ isAnalyzing }),
-
-  reset: () => set(initialState),
 }))

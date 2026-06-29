@@ -4,11 +4,9 @@
  * Pure platform-agnostic logic — uses `fetch` which is available in both
  * browser and WeChat Mini Program (via `wx.request` adapter, not yet wired).
  * For now, the web platform provides `fetch` natively.
- *
- * All endpoints are relative to VITE_API_BASE_URL (the main Next.js site).
  */
 
-import type { FaceAnalysisTaskResponse } from '../types'
+import type { FaceAnalysisReport } from '../types'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
 
@@ -45,25 +43,25 @@ async function apiRequest<T>(
 export const api = {
   /**
    * Submit a photo for VLM deep analysis (main site, requires upload).
-   * Returns a task that can be polled for completion.
+   * Returns a report that can be polled for completion.
    */
-  submitFaceAnalysis(imageBase64: string): Promise<FaceAnalysisTaskResponse> {
-    return apiRequest<FaceAnalysisTaskResponse>('/api/face-analysis/submit', {
+  submitFaceAnalysis(imageBase64: string): Promise<FaceAnalysisReport> {
+    return apiRequest<FaceAnalysisReport>('/api/face-analysis/submit', {
       method: 'POST',
       body: { image: imageBase64 },
     })
   },
 
-  /** Poll a face analysis task by ID */
-  getFaceAnalysisTask(taskId: string): Promise<FaceAnalysisTaskResponse> {
-    return apiRequest<FaceAnalysisTaskResponse>(`/api/face-analysis/status?id=${taskId}`)
+  /** Get a face analysis report by ID */
+  getReport(reportId: string): Promise<FaceAnalysisReport> {
+    return apiRequest<FaceAnalysisReport>(`/api/face-analysis/status?id=${reportId}`)
   },
 
   /** Unlock the full report (Stripe checkout or credit consumption) */
-  unlockReport(taskId: string): Promise<FaceAnalysisTaskResponse> {
-    return apiRequest<FaceAnalysisTaskResponse>('/api/face-analysis/unlock', {
+  unlockReport(reportId: string): Promise<FaceAnalysisReport> {
+    return apiRequest<FaceAnalysisReport>('/api/face-analysis/unlock', {
       method: 'POST',
-      body: { taskId },
+      body: { reportId },
     })
   },
 
