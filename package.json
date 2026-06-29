@@ -1,0 +1,42 @@
+{
+  "name": "visutry-mobile",
+  "version": "0.1.0",
+  "private": true,
+  "description": "VisuTry mobile PWA — single-page web app with cross-platform evolution path (WeChat Mini Program ready).",
+  "type": "module",
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@10.31.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview --host",
+    "lint": "eslint . --ext ts,tsx",
+    "typecheck": "tsc -b --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@visutry/tryon-core": "workspace:*",
+    "@visutry/tryon-web": "workspace:*",
+    "lucide-react": "^0.294.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "zustand": "^4.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.4",
+    "@types/react": "^18.2.42",
+    "@types/react-dom": "^18.2.17",
+    "@vitejs/plugin-react": "^4.2.1",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.32",
+    "tailwindcss": "^3.3.6",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.0",
+    "vite-plugin-pwa": "^0.17.4",
+    "vitest": "^1.1.0"
+  }
+}

@@ -1,0 +1,3 @@
+packages:
+  - .
+  - ../visutry-tryon-sdk/packages/*
