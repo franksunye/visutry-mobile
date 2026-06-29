@@ -30,7 +30,7 @@ export function SizeSuggestionScreen() {
       ) : (
         <div className="flex flex-col gap-4 px-4 pb-8 pt-2 overflow-y-auto">
           {/* ── Face diagram card ── */}
-          <div className="bg-white rounded-card p-4 flex flex-col items-center gap-3">
+          <div className="bg-white rounded-card p-4 flex flex-col items-center gap-3 shadow-card">
             <FaceDiagram />
             <div className="flex flex-col items-center gap-1">
               <span className="bg-brand text-ink rounded-btn px-3 py-1 text-sm font-medium">
@@ -41,14 +41,14 @@ export function SizeSuggestionScreen() {
           </div>
 
           {/* ── Size specs card ── */}
-          <div className="bg-white rounded-card p-4 space-y-3">
+          <div className="bg-white rounded-card p-4 space-y-3 shadow-card">
             <SpecRow label="镜框总宽" value={size.frameWidth} />
             <SpecRow label="镜片高度" value={size.lensHeight} />
             <SpecRow label="镜腿长度" value={size.templeLength} />
           </div>
 
           {/* ── Wearing tips card ── */}
-          <div className="bg-white rounded-card p-4">
+          <div className="bg-white rounded-card p-4 shadow-card">
             <h2 className="text-sm font-semibold text-ink mb-2">佩戴建议</h2>
             <ul className="space-y-2">
               {size.wearingTips.map((tip, index) => (
@@ -63,7 +63,7 @@ export function SizeSuggestionScreen() {
           {/* ── CTA (premium, pink lock feel) ── */}
           <Button
             size="lg"
-            className="bg-gradient-to-r from-pink to-pink-dark text-white shadow-sm"
+            className="bg-gradient-to-r from-pink to-pink-dark text-white shadow-pink"
           >
             <Lock size={18} />
             去试戴

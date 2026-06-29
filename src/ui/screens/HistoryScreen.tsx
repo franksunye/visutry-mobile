@@ -39,7 +39,9 @@ export function HistoryScreen() {
       <div className="flex flex-col min-h-[100dvh] bg-ink-bg">
         <ScreenHeader title="历史报告" onBack={goBack} rightSlot={editButton} />
         <div className="flex flex-col items-center justify-center gap-4 flex-1 px-6 text-center">
-          <FileText size={48} className="text-ink-tertiary" />
+          <div className="w-20 h-20 rounded-full bg-brand-100 flex items-center justify-center">
+            <FileText size={36} className="text-ink-tertiary" />
+          </div>
           <div className="flex flex-col gap-1">
             <p className="text-base font-semibold text-ink">暂无历史报告</p>
             <p className="text-sm text-ink-tertiary">开始你的第一次脸型分析</p>
@@ -62,7 +64,7 @@ export function HistoryScreen() {
           {history.map((report: FaceAnalysisReport) => (
             <li
               key={report.id}
-              className="bg-white rounded-card p-3 shadow-sm flex items-center gap-3"
+              className="bg-white rounded-card p-3 shadow-card flex items-center gap-3"
             >
               {/* Thumbnail */}
               <div className="w-12 h-12 rounded-full bg-brand-200 flex items-center justify-center shrink-0">

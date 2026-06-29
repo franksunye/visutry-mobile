@@ -64,7 +64,7 @@ export default function App() {
   const isSubPageActive = subPage !== null
 
   return (
-    <div className="relative h-full min-h-[100dvh] bg-ink-bg">
+    <div className="relative h-full min-h-[100dvh] bg-white">
       {/* Tab content (always mounted, hidden when sub-page active) */}
       <div className={isSubPageActive ? 'hidden' : 'block pb-14'}>
         {renderTabContent()}
@@ -72,7 +72,7 @@ export default function App() {
 
       {/* Sub-page overlay */}
       {isSubPageActive && (
-        <div className="absolute inset-0 z-40 bg-ink-bg overflow-y-auto no-scrollbar">
+        <div className="absolute inset-0 z-40 bg-white overflow-y-auto no-scrollbar">
           {renderSubPage()}
         </div>
       )}
