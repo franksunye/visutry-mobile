@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Check, Loader2 } from 'lucide-react'
-import { ScreenHeader } from '../components/ScreenHeader'
+import { Check, ChevronLeft, Loader2, X } from 'lucide-react'
 import { useAppStore } from '@core/state/store'
 import { FACE_SHAPE_DISPLAY_NAMES, type FaceAnalysisReport } from '@core/types'
 
-const RADIUS = 70
+const RADIUS = 80
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS
 const TARGET_PERCENT = 78
 
@@ -48,20 +47,22 @@ export function AnalyzingScreen() {
         photoUrl: capturedImageUrl ?? undefined,
         summary: '你的脸型属于方形脸，下颌线条分明、轮廓硬朗。建议选择带有圆润曲线的镜框，柔和面部轮廓。',
         keyFeatures: [
-          { label: '脸长脸宽比', value: '1.23:1', level: 'high' },
-          { label: '下颌线', value: '明显', level: 'high' },
-          { label: '颧骨', value: '中等', level: 'medium' },
-          { label: '面部轮廓', value: '方形', level: 'high' },
+          { label: '脸长脸宽比', value: '1.23:1' },
+          { label: '颧骨', value: '中等' },
+          { label: '对称度', value: '高 85%' },
+          { label: '下颌线', value: '明显' },
+          { label: '面部轮廓', value: '方形' },
+          { label: '下巴形状', value: '适中' },
         ],
         bestFrames: [
-          { rank: 1, type: 'round', displayName: '圆形镜框', matchScore: 92, reason: '柔和曲线平衡方脸轮廓', stylingNote: '适合日常通勤' },
+          { rank: 1, type: 'round', displayName: '圆形镜框', matchScore: 92, reason: '柔和脸部线条', stylingNote: '适合日常通勤' },
           { rank: 2, type: 'aviator', displayName: '飞行员框', matchScore: 89, reason: '经典款式修饰脸型', stylingNote: '适合休闲场合' },
           { rank: 3, type: 'square', displayName: '方形镜框', matchScore: 86, reason: '几何感强增强个性', stylingNote: '适合时尚搭配' },
         ],
         avoidFrames: ['方形大框', '窄长方框'],
         sizeSuggestion: {
           frameWidth: '138-142mm',
-          lensHeight: '42-46mm',
+          lensHeight: '52-54mm',
           templeLength: '145-150mm',
           wearingTips: ['镜框宽度与脸宽接近或略宽', '镜片高度适中，避免过小', '鼻托合适避免镜框滑落'],
         },
@@ -82,25 +83,33 @@ export function AnalyzingScreen() {
 
   return (
     <div className="flex flex-col min-h-[100dvh] bg-white">
-      <ScreenHeader title="AI分析中" subtitle="预计需要10-15秒" onBack={goBack} />
+      {/* Header */}
+      <header className="flex items-center justify-between px-4 h-12 pt-safe shrink-0">
+        <button type="button" onClick={goBack} className="p-1 -ml-1 active:scale-90 transition-transform">
+          <ChevronLeft size={24} className="text-ink" />
+        </button>
+        <h1 className="text-base font-semibold text-ink">AI 分析中</h1>
+        <button type="button" onClick={goBack} className="p-1 -mr-1 active:scale-90 transition-transform">
+          <X size={20} className="text-ink-secondary" />
+        </button>
+      </header>
 
-      <div className="flex flex-col flex-1 px-6 pb-8 pt-6 items-center">
-        {/* Circular progress — larger, more prominent */}
-        <div className="relative" style={{ width: 160, height: 160 }}>
-          <svg width={160} height={160} viewBox="0 0 160 160" style={{ overflow: 'visible' }}>
+      {/* Progress area */}
+      <div className="flex flex-col items-center flex-1 px-6 pt-12">
+        {/* Circular progress */}
+        <div className="relative" style={{ width: 200, height: 200 }}>
+          <svg width={200} height={200} viewBox="0 0 200 200">
             <defs>
               <linearGradient id="analyzingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%" stopColor="#FF689A" />
-                <stop offset="50%" stopColor="#FFDB4D" />
-                <stop offset="100%" stopColor="#8BF44B" />
+                <stop offset="50%" stopColor="#FFDF4D" />
+                <stop offset="100%" stopColor="#B8F44B" />
               </linearGradient>
             </defs>
-            {/* Track */}
-            <circle cx={80} cy={80} r={RADIUS} fill="none" strokeWidth={10} stroke="#F0F0F0" />
-            {/* Progress */}
+            <circle cx={100} cy={100} r={RADIUS} fill="none" strokeWidth={10} stroke="#F0F0F0" />
             <circle
-              cx={80}
-              cy={80}
+              cx={100}
+              cy={100}
               r={RADIUS}
               fill="none"
               strokeWidth={10}
@@ -108,29 +117,28 @@ export function AnalyzingScreen() {
               strokeLinecap="round"
               strokeDasharray={CIRCUMFERENCE}
               strokeDashoffset={dashOffset}
-              transform="rotate(-90 80 80)"
+              transform="rotate(-90 100 100)"
             />
           </svg>
-          {/* Center text */}
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-4xl font-bold text-ink">{percent}%</span>
-            <span className="text-xs text-ink-tertiary mt-1">正在处理...</span>
+            <span className="text-5xl font-bold text-ink">{percent}%</span>
+            <span className="text-xs text-ink-tertiary mt-2">预计需要 10-15 秒</span>
           </div>
         </div>
 
-        {/* Progress checklist — circular badges */}
+        {/* Steps */}
         <div className="mt-12 w-full max-w-xs space-y-4">
           {COMPLETED_STEPS.map((step) => (
             <div key={step} className="flex items-center gap-3">
-              <div className="w-7 h-7 rounded-full bg-lime/15 flex items-center justify-center shrink-0">
-                <Check size={16} className="text-lime" strokeWidth={3} />
+              <div className="w-6 h-6 rounded-full bg-lime/20 flex items-center justify-center shrink-0">
+                <Check size={14} className="text-lime" strokeWidth={3} />
               </div>
               <span className="text-sm text-ink-primary">{step}</span>
             </div>
           ))}
           <div className="flex items-center gap-3">
-            <div className="w-7 h-7 rounded-full bg-brand/15 flex items-center justify-center shrink-0">
-              <Loader2 size={16} className="text-brand animate-spin" />
+            <div className="w-6 h-6 rounded-full bg-brand/20 flex items-center justify-center shrink-0">
+              <Loader2 size={14} className="text-brand-600 animate-spin" />
             </div>
             <span className="text-sm text-ink-primary">{ACTIVE_STEP}</span>
           </div>

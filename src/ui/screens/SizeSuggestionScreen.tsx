@@ -1,6 +1,4 @@
-import { Check, Lock, Share2 } from 'lucide-react'
-import { Button } from '../components/Button'
-import { ScreenHeader } from '../components/ScreenHeader'
+import { Check, ChevronLeft, Share2 } from 'lucide-react'
 import { useAppStore } from '@core/state/store'
 
 export function SizeSuggestionScreen() {
@@ -9,65 +7,67 @@ export function SizeSuggestionScreen() {
 
   const size = currentReport?.sizeSuggestion
 
-  const shareButton = (
-    <button
-      type="button"
-      aria-label="分享"
-      className="p-1 active:scale-90 transition-transform"
-    >
-      <Share2 size={20} className="text-ink-secondary" />
-    </button>
-  )
-
   return (
     <div className="flex flex-col min-h-[100dvh] bg-ink-bg">
-      <ScreenHeader title="尺寸建议" onBack={goBack} rightSlot={shareButton} />
+      {/* Header */}
+      <header className="flex items-center justify-between px-4 h-12 pt-safe shrink-0 bg-white">
+        <button type="button" onClick={goBack} className="p-1 -ml-1 active:scale-90 transition-transform">
+          <ChevronLeft size={24} className="text-ink" />
+        </button>
+        <h1 className="text-base font-semibold text-ink">尺寸建议</h1>
+        <button type="button" className="p-1 -mr-1 active:scale-90 transition-transform">
+          <Share2 size={20} className="text-ink-secondary" />
+        </button>
+      </header>
 
       {!size ? (
         <div className="flex flex-col items-center justify-center gap-3 flex-1 px-6 text-center">
           <p className="text-sm text-ink-tertiary">暂无尺寸建议</p>
         </div>
       ) : (
-        <div className="flex flex-col gap-4 px-4 pb-8 pt-2 overflow-y-auto">
-          {/* ── Face diagram card ── */}
+        <div className="flex flex-col gap-3 px-4 pb-8 pt-3 overflow-y-auto no-scrollbar flex-1">
+          {/* Size badge + face diagram */}
           <div className="bg-white rounded-card p-4 flex flex-col items-center gap-3 shadow-card">
             <FaceDiagram />
             <div className="flex flex-col items-center gap-1">
-              <span className="bg-brand text-ink rounded-btn px-3 py-1 text-sm font-medium">
-                中号
+              <span className="bg-brand text-ink rounded-full px-4 py-1.5 text-sm font-semibold">
+                中等
               </span>
               <span className="text-xs text-ink-tertiary">建议镜框尺寸</span>
             </div>
           </div>
 
-          {/* ── Size specs card ── */}
-          <div className="bg-white rounded-card p-4 space-y-3 shadow-card">
+          {/* Size specs */}
+          <div className="bg-white rounded-card p-4 shadow-card">
             <SpecRow label="镜框总宽" value={size.frameWidth} />
+            <div className="h-px bg-ink-border my-3" />
             <SpecRow label="镜片高度" value={size.lensHeight} />
+            <div className="h-px bg-ink-border my-3" />
             <SpecRow label="镜腿长度" value={size.templeLength} />
           </div>
 
-          {/* ── Wearing tips card ── */}
+          {/* Wearing tips */}
           <div className="bg-white rounded-card p-4 shadow-card">
-            <h2 className="text-sm font-semibold text-ink mb-2">佩戴建议</h2>
-            <ul className="space-y-2">
+            <h2 className="text-sm font-semibold text-ink mb-3">佩戴建议</h2>
+            <div className="flex flex-col gap-2.5">
               {size.wearingTips.map((tip, index) => (
-                <li key={index} className="flex items-start gap-2">
-                  <Check size={16} className="text-lime shrink-0 mt-0.5" />
+                <div key={index} className="flex items-start gap-2">
+                  <div className="w-5 h-5 rounded-full bg-lime/20 flex items-center justify-center shrink-0 mt-0.5">
+                    <Check size={12} className="text-lime" strokeWidth={3} />
+                  </div>
                   <span className="text-sm text-ink-primary">{tip}</span>
-                </li>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
 
-          {/* ── CTA (premium, pink lock feel) ── */}
-          <Button
-            size="lg"
-            className="bg-gradient-to-r from-pink to-pink-dark text-white shadow-pink"
+          {/* CTA */}
+          <button
+            type="button"
+            className="w-full h-13 py-3.5 bg-brand text-ink font-semibold text-base rounded-btn flex items-center justify-center gap-1 active:scale-[0.98] transition-transform shadow-brand mt-2"
           >
-            <Lock size={18} />
             去试戴
-          </Button>
+          </button>
         </div>
       )}
     </div>
@@ -78,55 +78,44 @@ function SpecRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between">
       <span className="text-sm text-ink-secondary">{label}</span>
-      <span className="text-sm font-semibold text-ink">{value}</span>
+      <span className="text-sm font-medium text-ink">{value}</span>
     </div>
   )
 }
 
-/** Simple SVG face outline with measurement callout lines. */
+/** Minimalist face outline with measurement callouts */
 function FaceDiagram() {
   const faint = '#EDEDED'
   const stroke = '#ABABAB'
   const accent = '#FF689A'
 
   return (
-    <svg
-      viewBox="0 0 200 176"
-      className="w-40 h-36"
-      fill="none"
-      aria-label="脸型尺寸示意图"
-      role="img"
-    >
-      {/* Guide lines from face edges to callouts */}
-      <line x1="44" y1="28" x2="44" y2="20" stroke={faint} strokeWidth="1" />
-      <line x1="156" y1="28" x2="156" y2="20" stroke={faint} strokeWidth="1" />
-      <line x1="156" y1="28" x2="180" y2="28" stroke={faint} strokeWidth="1" />
-      <line x1="156" y1="156" x2="180" y2="156" stroke={faint} strokeWidth="1" />
-
+    <svg viewBox="0 0 200 180" className="w-40 h-36" fill="none" aria-label="脸型尺寸示意图" role="img">
       {/* Width callout (top) */}
-      <line x1="44" y1="20" x2="156" y2="20" stroke={accent} strokeWidth="1.5" />
-      <line x1="44" y1="16" x2="44" y2="24" stroke={accent} strokeWidth="1.5" />
-      <line x1="156" y1="16" x2="156" y2="24" stroke={accent} strokeWidth="1.5" />
+      <line x1="44" y1="24" x2="156" y2="24" stroke={accent} strokeWidth="1.5" />
+      <line x1="44" y1="20" x2="44" y2="28" stroke={accent} strokeWidth="1.5" />
+      <line x1="156" y1="20" x2="156" y2="28" stroke={accent} strokeWidth="1.5" />
 
       {/* Height callout (right) */}
-      <line x1="180" y1="28" x2="180" y2="156" stroke={accent} strokeWidth="1.5" />
-      <line x1="176" y1="28" x2="184" y2="28" stroke={accent} strokeWidth="1.5" />
-      <line x1="176" y1="156" x2="184" y2="156" stroke={accent} strokeWidth="1.5" />
+      <line x1="180" y1="36" x2="180" y2="152" stroke={accent} strokeWidth="1.5" />
+      <line x1="176" y1="36" x2="184" y2="36" stroke={accent} strokeWidth="1.5" />
+      <line x1="176" y1="152" x2="184" y2="152" stroke={accent} strokeWidth="1.5" />
+
+      {/* Guide lines */}
+      <line x1="44" y1="36" x2="44" y2="24" stroke={faint} strokeWidth="1" />
+      <line x1="156" y1="36" x2="156" y2="24" stroke={faint} strokeWidth="1" />
+      <line x1="156" y1="36" x2="180" y2="36" stroke={faint} strokeWidth="1" />
+      <line x1="156" y1="152" x2="180" y2="152" stroke={faint} strokeWidth="1" />
 
       {/* Face outline */}
-      <ellipse cx="100" cy="92" rx="56" ry="64" stroke={stroke} strokeWidth="2" />
+      <ellipse cx="100" cy="94" rx="56" ry="58" stroke={stroke} strokeWidth="2" />
 
       {/* Jaw suggestion */}
-      <path
-        d="M58 112 Q100 158 142 112"
-        stroke="#FFDB4D"
-        strokeWidth="3"
-        strokeLinecap="round"
-      />
+      <path d="M58 112 Q100 152 142 112" stroke="#FFDF4D" strokeWidth="3" strokeLinecap="round" fill="none" />
 
       {/* Eyes */}
-      <line x1="72" y1="86" x2="86" y2="86" stroke={stroke} strokeWidth="2" strokeLinecap="round" />
-      <line x1="114" y1="86" x2="128" y2="86" stroke={stroke} strokeWidth="2" strokeLinecap="round" />
+      <line x1="74" y1="88" x2="88" y2="88" stroke={stroke} strokeWidth="2" strokeLinecap="round" />
+      <line x1="112" y1="88" x2="126" y2="88" stroke={stroke} strokeWidth="2" strokeLinecap="round" />
     </svg>
   )
 }
