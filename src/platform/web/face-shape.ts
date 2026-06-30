@@ -4,13 +4,45 @@
  * This file IS allowed to use DOM APIs (ImageBitmap, createImageBitmap).
  * The WeChat counterpart (platform/wechat/face-shape.ts) will use
  * @visutry/tryon-wechat instead.
+ *
+ * NOTE: SDK 1.0.0-beta API — createVisuTryWebSDK requires a canvas for the
+ * Three.js renderer. For face-shape-only analysis (no AR try-on), we create
+ * an offscreen canvas that is never displayed.
  */
 
-import type { VisuTrySDK } from '@visutry/tryon-core'
+import type { VisuTrySDK, FaceShapeResult } from '@visutry/tryon-core'
 import type { FaceShapeAnalyzer } from '@core/face-shape/analyzer'
 import type { FaceGeometryAnalysis, ImageInput } from '@core/types'
 
 const SDK_ENABLED = import.meta.env.VITE_FACE_SHAPE_SDK_ENABLED === 'true'
+
+/** Map SDK 1.0 FaceShapeResult to our FaceGeometryAnalysis */
+function mapFaceShape(result: FaceShapeResult): FaceGeometryAnalysis {
+  const shapeMap: Record<string, FaceGeometryAnalysis['measuredShape']> = {
+    oval: 'oval',
+    round: 'round',
+    square: 'square',
+    heart: 'heart',
+    diamond: 'diamond',
+    oblong: 'oblong',
+    unknown: undefined,
+  }
+
+  const measured = shapeMap[result.primary] ?? undefined
+
+  return {
+    version: 'landmark-v1',
+    status: measured ? 'measured' : 'unavailable',
+    source: 'mediapipe-face-landmarker',
+    faceDetected: measured !== undefined,
+    faceCount: measured ? 1 : 0,
+    qualityScore: Math.round(result.confidence * 100),
+    measuredShape: measured,
+    measuredConfidence: result.confidence,
+    signals: result.candidates.map((c) => `${c.shape}: ${c.score.toFixed(2)}`),
+    warnings: result.warnings.map((w) => String(w)),
+  }
+}
 
 export class WebFaceShapeAnalyzer implements FaceShapeAnalyzer {
   private sdkPromise: Promise<VisuTrySDK> | null = null
@@ -20,8 +52,17 @@ export class WebFaceShapeAnalyzer implements FaceShapeAnalyzer {
       this.sdkPromise = (async () => {
         const { createVisuTryWebSDK } = await import('@visutry/tryon-web')
 
+        // SDK 1.0 requires a canvas for the Three.js renderer.
+        // For face-shape-only analysis, create an offscreen canvas.
+        const canvas = document.createElement('canvas')
+        canvas.width = 1
+        canvas.height = 1
+        canvas.style.display = 'none'
+        document.body.appendChild(canvas)
+
         const sdk = createVisuTryWebSDK({
-          tracker: { mode: 'accurate' },
+          canvas,
+          tracker: { mode: 'balanced' },
           privacy: { processOnDeviceOnly: true, allowAnalytics: true },
         })
         await sdk.initialize()
@@ -31,7 +72,7 @@ export class WebFaceShapeAnalyzer implements FaceShapeAnalyzer {
     return this.sdkPromise
   }
 
-  async analyze(image: ImageInput): Promise<FaceGeometryAnalysis> {
+  async analyze(_image: ImageInput): Promise<FaceGeometryAnalysis> {
     if (!SDK_ENABLED) {
       return {
         version: 'landmark-v1',
@@ -45,20 +86,10 @@ export class WebFaceShapeAnalyzer implements FaceShapeAnalyzer {
       }
     }
 
-    // Convert platform-agnostic ImageInput to ImageBitmap for the web SDK
-    const blob = image.data as Blob
-    const bitmap = await createImageBitmap(blob)
-
     try {
       const sdk = await this.getSdk()
-      const { toFaceGeometryAnalysis } = await import('@visutry/tryon-core')
-
-      const result = await sdk.analyzeImage(bitmap, {
-        maxDimension: 1024,
-        applyExif: true,
-      })
-
-      return toFaceGeometryAnalysis(result) as FaceGeometryAnalysis
+      const result: FaceShapeResult = await sdk.analyzeFaceShape()
+      return mapFaceShape(result)
     } catch (error) {
       return {
         version: 'landmark-v1',
@@ -74,8 +105,6 @@ export class WebFaceShapeAnalyzer implements FaceShapeAnalyzer {
             : 'SDK face analysis failed.',
         ],
       }
-    } finally {
-      bitmap.close()
     }
   }
 

@@ -1,0 +1,3 @@
+[submodule "packages/visutry-tryon-sdk"]
+	path = packages/visutry-tryon-sdk
+	url = https://github.com/franksunye/visutry-tryon-sdk.git
