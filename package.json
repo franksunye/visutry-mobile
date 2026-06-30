@@ -11,7 +11,8 @@
   "packageManager": "pnpm@10.31.0",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build:sdk": "cd packages/visutry-tryon-sdk && pnpm install --no-frozen-lockfile && find . -name '*.tsbuildinfo' -not -path '*/node_modules/*' -delete && pnpm build",
+    "build": "pnpm build:sdk && tsc -b && vite build",
     "preview": "vite preview --host",
     "lint": "eslint . --ext ts,tsx",
     "typecheck": "tsc -b --noEmit",
