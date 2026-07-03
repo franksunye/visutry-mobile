@@ -1,4 +1,4 @@
-# VisuTry Mobile IA: Stateful Home + Strict Two-Level Views
+# VisuTry Mobile IA: SDK-First Home + Strict Two-Level Views
 
 This branch changes the early mobile product direction away from tab navigation.
 
@@ -8,7 +8,32 @@ The product is not a multi-tab app, and it is also not a page that expands every
 
 The early version helps a user complete one job:
 
-> Upload a face photo → get a face report → review recommended frames → preview try-on results.
+> Upload a face photo → get a face report → review SDK-ranked recommended frames → preview try-on results.
+
+## Current product scope
+
+Prioritize SDK integration before account, persistence, or history.
+
+For the early mobile version:
+
+- No history module.
+- No saved report list.
+- No database persistence.
+- Keep state in the current session only.
+- Use SDK output to drive report/recommendation/try-on UI.
+
+The first SDK integration step is `@visutry/recommender`:
+
+- Mobile imports `Recommender` from `@visutry/recommender`.
+- Mobile passes a demo `FaceShapeResult` and a local frame inventory.
+- Recommended frames are sorted by SDK score.
+- UI uses SDK scores/reasons to render the report and frame list.
+
+Next SDK integration steps:
+
+1. Replace demo `FaceShapeResult` with real output from face analysis.
+2. Connect image/camera analysis through `@visutry/tryon-web`.
+3. Replace static try-on preview with SDK renderer output.
 
 ## Core model
 
@@ -51,7 +76,6 @@ type ViewState =
   | 'report-detail'
   | 'frames'
   | 'tryon'
-  | 'history'
   | 'settings'
   | 'poster'
 ```
@@ -66,7 +90,7 @@ Allowed on Home:
 - photo check when photo is selected
 - analysis progress when analyzing
 - report summary when report exists
-- top recommended frames summary
+- SDK-ranked recommended frames summary
 - try-on summary after try-on is ready
 - small utility entry points
 
@@ -74,12 +98,12 @@ Avoid on Home:
 
 - full report details
 - full frame lists
-- history lists
 - settings content
 - privacy explanation blocks
 - poster generation content
+- history lists
 
-Those belong in secondary views.
+Those belong in secondary views or should be omitted for the early version.
 
 ## Strict two-level navigation rule
 
@@ -103,31 +127,10 @@ Disallowed:
 - `frames → report-detail`
 - `frames → tryon`
 - `tryon → poster`
-- `history → report-detail`
 - `settings → report-detail`
+- `history → report-detail`
 
-Instead, these actions update Home state and return to Home.
-
-Examples:
-
-```ts
-// History item selected
-setFlowState('report-ready')
-setView('home')
-```
-
-```ts
-// Frames page try-on CTA
-setFlowState('tryon-ready')
-setView('home')
-```
-
-```ts
-// Try-on page poster CTA
-setFlowState('tryon-ready')
-setView('home')
-setNotice('已生成海报占位')
-```
+The history view is intentionally removed from the early scope.
 
 ## Secondary view rules
 
@@ -140,9 +143,8 @@ This is intentionally different from generic back navigation. It stabilizes the 
 Secondary views should be shallow and focused:
 
 - `report-detail`: full report, metrics, size/style explanation
-- `frames`: complete recommended frame list and avoid list
+- `frames`: complete SDK-ranked recommended frame list and avoid list
 - `tryon`: full try-on preview grid and save/poster actions
-- `history`: recent reports and create-new-report action
 - `settings`: privacy, data, notification placeholder, reset
 - `poster`: poster/export placeholder
 
@@ -159,7 +161,7 @@ Secondary views should be shallow and focused:
    - change `ViewState` from Home only,
    - return to Home,
    - or display a clear feedback notice on Home.
-8. Labels such as `已生成` or `Top 4` are status text, not buttons.
+8. Labels such as `已生成` or `SDK 推荐` are status text, not deep navigation.
 
 ## Review checklist
 
@@ -171,21 +173,19 @@ When reviewing locally, verify these flows:
 - Home → recommended frames → 首页
 - Home → try-on → save result → 首页 with feedback
 - Home → try-on → poster placeholder → 首页 with feedback
-- Home → history → select report → 首页 with report state
-- Home → history → create new report → 首页 with photo-ready state
 - Home → settings/privacy → 首页
 - Reset current flow → empty state
 
 ## Next engineering step
 
-Replace static prototype state with real SDK output from:
+Replace demo SDK input with real SDK output from:
 
 - `@visutry/tryon-web`
 - `@visutry/tryon-core`
 
-Then add persistence for returning users:
+Then connect:
 
-- latest report
-- selected frames
-- saved try-on result
-- privacy / retention state
+- real face photo input
+- real `FaceShapeResult`
+- real recommended frame inventory
+- real try-on renderer output
