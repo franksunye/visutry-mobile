@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import type { FaceShapeResult, GlassesItem, RecommendedGlasses } from '@visutry/tryon-core'
-import { Recommender } from '@visutry/recommender'
+import { Recommender } from '../packages/visutry-tryon-sdk/packages/recommender/dist/index.js'
 import {
   ArrowLeft, ArrowRight, Bell, Camera, Check, ChevronRight, FileText, Glasses, Heart,
   Image as ImageIcon, LockKeyhole, MoreHorizontal, Ruler, Settings,
