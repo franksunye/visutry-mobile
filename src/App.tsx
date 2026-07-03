@@ -115,7 +115,7 @@ function AnalysisSection({ visible, progress }: { visible: boolean; progress: nu
 
   return <section className="content-section analysis-body">
     <h1>AI 分析中</h1><p>根据照片计算脸型比例与镜框建议</p>
-    <button className="progress-ring" style={{ '--progress': `${progress * 3.6}deg` } as CSSProperties}><span>{progress}<small>%</small></span></button>
+    <div className="progress-ring" style={{ '--progress': `${progress * 3.6}deg` } as CSSProperties}><span>{progress}<small>%</small></span></div>
     <div className="analysis-steps">{['照片质量检测', '面部关键点识别', '脸型比例计算', '生成镜框推荐'].map((s, i) => <div className={i < activeStep ? 'done' : i === activeStep ? 'doing' : ''} key={s}><span>{i < activeStep ? <Check /> : i === activeStep ? <i /> : ''}</span><b>{s}</b><small>{i < activeStep ? '已完成' : i === activeStep ? '进行中' : '等待中'}</small></div>)}</div>
   </section>
 }
@@ -155,7 +155,7 @@ function TryOnSection({ visible, onSave, onShare, onRetry }: { visible: boolean;
   </section>
 }
 
-function InlinePanelSection({ panel, onClose, onUpload, onShowReport }: { panel: InlinePanel; onClose: () => void; onUpload: () => void; onShowReport: () => void }) {
+function InlinePanelSection({ panel, onClose, onUpload, onShowReport, onNotify }: { panel: InlinePanel; onClose: () => void; onUpload: () => void; onShowReport: () => void; onNotify: () => void }) {
   if (panel === 'none') return null
 
   const titleMap: Record<Exclude<InlinePanel, 'none'>, string> = {
@@ -186,7 +186,7 @@ function InlinePanelSection({ panel, onClose, onUpload, onShowReport }: { panel:
       <button onClick={onUpload}><Camera /><span><b>创建新报告</b><small>重新上传照片并分析</small></span><ChevronRight /></button>
     </div>}
     {panel === 'settings' && <div className="menu-card">
-      <button><Bell /><b>通知提醒</b><span className="switch on" /></button>
+      <button onClick={onNotify}><Bell /><b>通知提醒</b><span className="switch on" /></button>
       <button onClick={onUpload}><Camera /><b>重新开始</b><ChevronRight /></button>
       <button onClick={onShowReport}><FileText /><b>查看示例报告</b><ChevronRight /></button>
     </div>}
@@ -241,6 +241,10 @@ export default function App() {
     setNotice('已生成海报占位，等待正式分享能力接入')
   }
 
+  const enableNotify = () => {
+    setNotice('通知提醒已开启（原型状态）')
+  }
+
   useEffect(() => {
     if (flowState !== 'analyzing') return undefined
     setProgress(28)
@@ -275,7 +279,7 @@ export default function App() {
       <ReportSection visible={visible.report} onTryOn={() => updateFlow('tryon-ready')} onDetails={() => showPanel('details')} onPrivacy={() => showPanel('privacy')} />
       <RecommendationsSection visible={visible.recommendations} onTryOn={() => updateFlow('tryon-ready')} onDetails={() => showPanel('details')} />
       <TryOnSection visible={visible.tryon} onSave={saveResult} onShare={shareResult} onRetry={() => updateFlow('photo-ready')} />
-      <InlinePanelSection panel={activePanel} onClose={() => setActivePanel('none')} onUpload={() => updateFlow('photo-ready')} onShowReport={() => updateFlow('report-ready')} />
+      <InlinePanelSection panel={activePanel} onClose={() => setActivePanel('none')} onUpload={() => updateFlow('photo-ready')} onShowReport={() => updateFlow('report-ready')} onNotify={enableNotify} />
       <UtilitySection state={flowState} onUpload={() => updateFlow('photo-ready')} onShowReport={() => updateFlow('report-ready')} onTryOn={() => updateFlow('tryon-ready')} onPanel={showPanel} />
     </div>
   </div></main>
