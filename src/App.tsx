@@ -34,8 +34,8 @@ function Portrait({ glasses, className = '' }: { glasses?: string | false; class
   return <div className={`portrait ${className}`}><img src={portrait} alt="用于演示脸型分析的模特" />{glasses && <GlassOverlay kind={glasses} />}</div>
 }
 
-function SectionTitle({ title, action }: { title: string; action?: string }) {
-  return <div className="section-title"><strong>{title}</strong>{action && <button>{action}<ChevronRight /></button>}</div>
+function SectionTitle({ title, action, onAction }: { title: string; action?: string; onAction?: () => void }) {
+  return <div className="section-title"><strong>{title}</strong>{action && (onAction ? <button onClick={onAction}>{action}<ChevronRight /></button> : <span style={{ color: '#8792a5', fontSize: 12 }}>{action}</span>)}</div>
 }
 
 function AppHeader({ state, onReset, onSettings }: { state: FlowState; onReset: () => void; onSettings: () => void }) {
@@ -167,7 +167,7 @@ function InlinePanelSection({ panel, onClose, onUpload, onShowReport }: { panel:
   }
 
   return <section className="content-section profile-page">
-    <SectionTitle title={titleMap[panel]} action="关闭" />
+    <SectionTitle title={titleMap[panel]} action="关闭" onAction={onClose} />
     {panel === 'details' && <div className="list-card compact">
       {[
         ['脸型特征', '额头与下颌宽度相近，下颌角较明显，整体轮廓偏方正。'],
