@@ -20,6 +20,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@visutry/recommender": "workspace:*",
     "@visutry/tryon-core": "workspace:*",
     "@visutry/tryon-web": "workspace:*",
     "lucide-react": "^0.294.0",
