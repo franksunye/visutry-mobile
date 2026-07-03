@@ -99,6 +99,28 @@ Available actions:
 5. Labels such as `已生成` or `Top 4` are status text, not buttons.
 6. Secondary settings/history/privacy/details are inline panels, not separate pages.
 
+## Review checklist
+
+When reviewing the prototype locally, verify that each of these actions has an understandable outcome:
+
+- Start face analysis
+- View sample report
+- Re-select photo
+- Start AI analysis
+- Wait for analysis to finish
+- Open report details
+- Open privacy explanation
+- Open recommended frames
+- Open try-on preview
+- Save try-on result
+- Generate poster placeholder
+- Reanalyze a new photo
+- Open settings
+- Enable notification placeholder
+- Open history
+- Return from an inline panel
+- Reset current flow
+
 ## Next engineering step
 
 Replace static prototype state with real SDK output from:
