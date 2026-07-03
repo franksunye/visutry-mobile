@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import {
-  ArrowRight, Camera, Check, ChevronRight, FileText, Glasses, Heart,
+  ArrowRight, Bell, Camera, Check, ChevronRight, FileText, Glasses, Heart,
   Image as ImageIcon, LockKeyhole, MoreHorizontal, Ruler, Settings,
   ShieldCheck, Sparkles, Trash2, UserRound, Wand2,
 } from 'lucide-react'
 
 type FlowState = 'empty' | 'photo-ready' | 'analyzing' | 'report-ready' | 'tryon-ready'
+type InlinePanel = 'none' | 'details' | 'privacy' | 'history' | 'settings' | 'saved'
 
 const portrait = '/assets/face-model.png'
 
@@ -37,15 +38,20 @@ function SectionTitle({ title, action }: { title: string; action?: string }) {
   return <div className="section-title"><strong>{title}</strong>{action && <button>{action}<ChevronRight /></button>}</div>
 }
 
-function AppHeader({ state, onReset }: { state: FlowState; onReset: () => void }) {
+function AppHeader({ state, onReset, onSettings }: { state: FlowState; onReset: () => void; onSettings: () => void }) {
   return <div className="home-head">
     <Logo />
-    <button className="capsule" onClick={onReset} aria-label="重置流程">
+    <button className="capsule" onClick={state === 'empty' ? onSettings : onReset} aria-label={state === 'empty' ? '设置' : '重置流程'}>
       {state === 'empty' ? <MoreHorizontal /> : <Trash2 />}
       <span />
       <span />
     </button>
   </div>
+}
+
+function StatusNotice({ message }: { message: string | null }) {
+  if (!message) return null
+  return <section className="content-section"><div className="success-note"><Check /> {message}</div></section>
 }
 
 function StateHero({ state, onUpload, onAnalyze, onShowReport, onTryOn }: { state: FlowState; onUpload: () => void; onAnalyze: () => void; onShowReport: () => void; onTryOn: () => void }) {
@@ -87,7 +93,7 @@ function StateHero({ state, onUpload, onAnalyze, onShowReport, onTryOn }: { stat
   </section>
 }
 
-function PhotoSection({ visible, onAnalyze }: { visible: boolean; onAnalyze: () => void }) {
+function PhotoSection({ visible, onAnalyze, onPrivacy }: { visible: boolean; onAnalyze: () => void; onPrivacy: () => void }) {
   if (!visible) return null
 
   return <section className="content-section upload">
@@ -95,7 +101,7 @@ function PhotoSection({ visible, onAnalyze }: { visible: boolean; onAnalyze: () 
     <div className="scan-photo"><Portrait /><span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" /><span className="face-guide" /></div>
     <div className="tips-row"><span>◉<small>不佩戴眼镜</small></span><span>☻<small>自然表情</small></span><span>♙<small>避免遮挡</small></span><span>☼<small>光线均匀</small></span></div>
     <div className="list-card">
-      <div className="info-row"><span><ShieldCheck /></span><div><b>隐私与权限</b><p>照片仅用于本次脸型分析。正式发布版将提供删除与本地缓存控制。</p></div></div>
+      <button className="info-row" onClick={onPrivacy}><span><ShieldCheck /></span><div><b>隐私与权限</b><p>照片仅用于本次脸型分析。点击查看数据说明。</p></div></button>
       <div className="info-row"><span><Sparkles /></span><div><b>SDK 接入点</b><p>下一轮会在这里调用 @visutry/tryon-web 完成质量检测、关键点识别和脸型评分。</p></div></div>
     </div>
     <PrimaryButton onClick={onAnalyze}><Sparkles /> 开始分析</PrimaryButton>
@@ -105,65 +111,135 @@ function PhotoSection({ visible, onAnalyze }: { visible: boolean; onAnalyze: () 
 function AnalysisSection({ visible, progress }: { visible: boolean; progress: number }) {
   if (!visible) return null
 
+  const activeStep = Math.min(3, Math.floor(progress / 28))
+
   return <section className="content-section analysis-body">
     <h1>AI 分析中</h1><p>根据照片计算脸型比例与镜框建议</p>
     <button className="progress-ring" style={{ '--progress': `${progress * 3.6}deg` } as CSSProperties}><span>{progress}<small>%</small></span></button>
-    <div className="analysis-steps">{['照片质量检测', '面部关键点识别', '脸型比例计算', '生成镜框推荐'].map((s, i) => <div className={i < Math.floor(progress / 28) ? 'done' : i === Math.floor(progress / 28) ? 'doing' : ''} key={s}><span>{i < Math.floor(progress / 28) ? <Check /> : i === Math.floor(progress / 28) ? <i /> : ''}</span><b>{s}</b><small>{i < Math.floor(progress / 28) ? '已完成' : i === Math.floor(progress / 28) ? '进行中' : '等待中'}</small></div>)}</div>
+    <div className="analysis-steps">{['照片质量检测', '面部关键点识别', '脸型比例计算', '生成镜框推荐'].map((s, i) => <div className={i < activeStep ? 'done' : i === activeStep ? 'doing' : ''} key={s}><span>{i < activeStep ? <Check /> : i === activeStep ? <i /> : ''}</span><b>{s}</b><small>{i < activeStep ? '已完成' : i === activeStep ? '进行中' : '等待中'}</small></div>)}</div>
   </section>
 }
 
-function ReportSection({ visible, onTryOn }: { visible: boolean; onTryOn: () => void }) {
+function ReportSection({ visible, onTryOn, onDetails, onPrivacy }: { visible: boolean; onTryOn: () => void; onDetails: () => void; onPrivacy: () => void }) {
   if (!visible) return null
 
   return <section className="content-section report-page">
     <SectionTitle title="脸型报告" action="已生成" />
     <div className="result-card"><Portrait /><div><small>你的脸型：</small><h1>方形脸</h1><span className="match"><Check /> 92% 匹配</span><p>下颌角较明显，线条鲜明，整体轮廓偏方正。</p></div></div>
     <div className="metric-grid">{[['脸长/脸宽比', '1.23 : 1', '中等'], ['对称度', '高', '89%'], ['颧骨', '中等', '较突出'], ['下颌线', '强', '明显'], ['额头宽度', '中等', '适中'], ['下巴形状', '方形', '明显']].map(([a, b, c]) => <div key={a}><small>{a}</small><b>{b}</b><span>{c}</span></div>)}</div>
-    <div className="summary-card"><Sparkles /><span><b>综合评估：方形脸</b><small>建议选择圆润边角、适中宽度、上缘略重的镜框。</small></span></div>
-    <div className="quick-nav"><button><Ruler />尺寸</button><button><Wand2 />风格</button><button><Glasses />推荐</button><button><LockKeyhole />隐私</button></div>
+    <button className="summary-card" onClick={onDetails}><Sparkles /><span><b>综合评估：方形脸</b><small>建议选择圆润边角、适中宽度、上缘略重的镜框。</small></span><ChevronRight /></button>
+    <div className="quick-nav"><button onClick={onDetails}><Ruler />尺寸</button><button onClick={onDetails}><Wand2 />风格</button><button onClick={onTryOn}><Glasses />推荐</button><button onClick={onPrivacy}><LockKeyhole />隐私</button></div>
     <PrimaryButton onClick={onTryOn}>试戴推荐镜框</PrimaryButton>
   </section>
 }
 
-function RecommendationsSection({ visible, onTryOn }: { visible: boolean; onTryOn: () => void }) {
+function RecommendationsSection({ visible, onTryOn, onDetails }: { visible: boolean; onTryOn: () => void; onDetails: () => void }) {
   if (!visible) return null
 
   return <section className="content-section frames-page">
     <SectionTitle title="推荐镜框" action="Top 4" />
     {frames.map((f) => <button className="frame-row" key={f.name} onClick={onTryOn}><div className={`frame-icon ${f.kind}`}><GlassOverlay kind={f.kind} /></div><div><b>{f.zh}</b><small>{f.reason}</small><span>{f.score}% 适合度</span></div><ChevronRight /></button>)}
+    <button className="text-link" onClick={onDetails}>查看推荐逻辑 <ArrowRight /></button>
   </section>
 }
 
-function TryOnSection({ visible }: { visible: boolean }) {
+function TryOnSection({ visible, onSave, onShare, onRetry }: { visible: boolean; onSave: () => void; onShare: () => void; onRetry: () => void }) {
   if (!visible) return null
 
   return <section className="content-section tryon-page">
     <span className="eyebrow"><ShieldCheck /> 来自脸型报告的推荐</span><h2>Try On Your Top Picks</h2><p>当前展示的是发布前静态预览。下一轮将替换为真实 SDK 试戴结果。</p>
-    <div className="tryon-grid">{frames.map((f) => <button key={f.name}><Portrait glasses={f.kind} /><Heart /><b>{f.name}</b><span>{f.score}% 匹配</span></button>)}</div>
+    <div className="tryon-grid">{frames.map((f) => <button key={f.name} onClick={onSave}><Portrait glasses={f.kind} /><Heart /><b>{f.name}</b><span>{f.score}% 匹配</span></button>)}</div>
     <div className="summary-card"><Glasses /><span><b>已为你匹配 4 款最佳镜框</b><small>社交帮选与好友投票后置到 v1.5+</small></span></div>
-    <PrimaryButton>保存当前结果</PrimaryButton><button className="text-link"><ArrowRight /> 生成试戴海报（后续接入）</button>
+    <PrimaryButton onClick={onSave}>保存当前结果</PrimaryButton><button className="text-link" onClick={onShare}><ArrowRight /> 生成试戴海报（后续接入）</button>
+    <button className="muted-link" onClick={onRetry}>重新分析一张照片</button>
   </section>
 }
 
-function UtilitySection({ state, onUpload, onShowReport }: { state: FlowState; onUpload: () => void; onShowReport: () => void }) {
+function InlinePanelSection({ panel, onClose, onUpload, onShowReport }: { panel: InlinePanel; onClose: () => void; onUpload: () => void; onShowReport: () => void }) {
+  if (panel === 'none') return null
+
+  const titleMap: Record<Exclude<InlinePanel, 'none'>, string> = {
+    details: '报告细节',
+    privacy: '隐私与数据',
+    history: '历史记录',
+    settings: '设置',
+    saved: '已保存',
+  }
+
+  return <section className="content-section profile-page">
+    <SectionTitle title={titleMap[panel]} action="关闭" />
+    {panel === 'details' && <div className="list-card compact">
+      {[
+        ['脸型特征', '额头与下颌宽度相近，下颌角较明显，整体轮廓偏方正。'],
+        ['尺寸建议', '镜框总宽建议 138–142 mm，镜片宽度 52–54 mm。'],
+        ['风格建议', '推荐圆形、椭圆形、飞行员或轻眉框款式。'],
+        ['推荐逻辑', '用圆润或上缘略重的框型平衡下颌线，避免过窄矩形框。'],
+      ].map(([a, b]) => <div className="info-row" key={a}><span><Check /></span><div><b>{a}</b><p>{b}</p></div></div>)}
+    </div>}
+    {panel === 'privacy' && <div className="list-card compact">
+      <div className="info-row"><span><ShieldCheck /></span><div><b>照片用途</b><p>照片仅用于本次脸型分析与镜框推荐，不进入公开内容。</p></div></div>
+      <div className="info-row"><span><Trash2 /></span><div><b>删除控制</b><p>正式版会提供清除当前照片、报告与本地缓存的入口。</p></div></div>
+      <div className="info-row"><span><LockKeyhole /></span><div><b>本地优先</b><p>SDK 能在设备端完成的分析会优先在本地处理。</p></div></div>
+    </div>}
+    {panel === 'history' && <div className="menu-card">
+      <button onClick={onShowReport}><FileText /><span><b>方形脸 · 当前报告</b><small>92% 匹配 · 推荐 4 款镜框</small></span><ChevronRight /></button>
+      <button onClick={onUpload}><Camera /><span><b>创建新报告</b><small>重新上传照片并分析</small></span><ChevronRight /></button>
+    </div>}
+    {panel === 'settings' && <div className="menu-card">
+      <button><Bell /><b>通知提醒</b><span className="switch on" /></button>
+      <button onClick={onUpload}><Camera /><b>重新开始</b><ChevronRight /></button>
+      <button onClick={onShowReport}><FileText /><b>查看示例报告</b><ChevronRight /></button>
+    </div>}
+    {panel === 'saved' && <div className="success-note"><Check /> 当前试戴结果已保存。正式版会写入历史记录并支持图片导出。</div>}
+    <button className="muted-link" onClick={onClose}>收起</button>
+  </section>
+}
+
+function UtilitySection({ state, onUpload, onShowReport, onTryOn, onPanel }: { state: FlowState; onUpload: () => void; onShowReport: () => void; onTryOn: () => void; onPanel: (panel: InlinePanel) => void }) {
   return <section className="content-section profile-page">
     <SectionTitle title={state === 'empty' ? '你将获得' : '更多操作'} />
     {state === 'empty' ? <div className="feature-grid">
       <button onClick={onUpload}><span><Camera /></span><b>脸型分析</b><small>上传照片</small></button>
       <button onClick={onShowReport}><span><FileText /></span><b>示例报告</b><small>先看效果</small></button>
-      <button><span><Glasses /></span><b>镜框推荐</b><small>Top picks</small></button>
+      <button onClick={onTryOn}><span><Glasses /></span><b>镜框推荐</b><small>Top picks</small></button>
     </div> : <div className="menu-card">
       <button onClick={onShowReport}><FileText /><b>查看报告摘要</b><ChevronRight /></button>
       <button onClick={onUpload}><Camera /><b>重新分析照片</b><ChevronRight /></button>
-      <button><Settings /><b>设置与隐私</b><ChevronRight /></button>
-      <button><UserRound /><b>历史记录</b><ChevronRight /></button>
+      <button onClick={() => onPanel('settings')}><Settings /><b>设置与隐私</b><ChevronRight /></button>
+      <button onClick={() => onPanel('history')}><UserRound /><b>历史记录</b><ChevronRight /></button>
     </div>}
   </section>
 }
 
 export default function App() {
   const [flowState, setFlowState] = useState<FlowState>('empty')
+  const [activePanel, setActivePanel] = useState<InlinePanel>('none')
+  const [notice, setNotice] = useState<string | null>(null)
   const [progress, setProgress] = useState(28)
+
+  const updateFlow = (next: FlowState) => {
+    setFlowState(next)
+    setActivePanel('none')
+    setNotice(null)
+    window.scrollTo(0, 0)
+  }
+
+  const showPanel = (panel: InlinePanel) => {
+    setActivePanel(panel)
+    setNotice(null)
+  }
+
+  const saveResult = () => {
+    setFlowState('tryon-ready')
+    setActivePanel('saved')
+    setNotice('结果已保存到当前会话')
+  }
+
+  const shareResult = () => {
+    setFlowState('tryon-ready')
+    setActivePanel('saved')
+    setNotice('已生成海报占位，等待正式分享能力接入')
+  }
 
   useEffect(() => {
     if (flowState !== 'analyzing') return undefined
@@ -191,14 +267,16 @@ export default function App() {
 
   return <main className="app-shell"><div className="device-frame">
     <div className="screen home-screen">
-      <AppHeader state={flowState} onReset={() => setFlowState('empty')} />
-      <StateHero state={flowState} onUpload={() => setFlowState('photo-ready')} onAnalyze={() => setFlowState('analyzing')} onShowReport={() => setFlowState('report-ready')} onTryOn={() => setFlowState('tryon-ready')} />
-      <PhotoSection visible={visible.photo} onAnalyze={() => setFlowState('analyzing')} />
+      <AppHeader state={flowState} onReset={() => updateFlow('empty')} onSettings={() => showPanel('settings')} />
+      <StateHero state={flowState} onUpload={() => updateFlow('photo-ready')} onAnalyze={() => updateFlow('analyzing')} onShowReport={() => updateFlow('report-ready')} onTryOn={() => updateFlow('tryon-ready')} />
+      <StatusNotice message={notice} />
+      <PhotoSection visible={visible.photo} onAnalyze={() => updateFlow('analyzing')} onPrivacy={() => showPanel('privacy')} />
       <AnalysisSection visible={visible.analysis} progress={progress} />
-      <ReportSection visible={visible.report} onTryOn={() => setFlowState('tryon-ready')} />
-      <RecommendationsSection visible={visible.recommendations} onTryOn={() => setFlowState('tryon-ready')} />
-      <TryOnSection visible={visible.tryon} />
-      <UtilitySection state={flowState} onUpload={() => setFlowState('photo-ready')} onShowReport={() => setFlowState('report-ready')} />
+      <ReportSection visible={visible.report} onTryOn={() => updateFlow('tryon-ready')} onDetails={() => showPanel('details')} onPrivacy={() => showPanel('privacy')} />
+      <RecommendationsSection visible={visible.recommendations} onTryOn={() => updateFlow('tryon-ready')} onDetails={() => showPanel('details')} />
+      <TryOnSection visible={visible.tryon} onSave={saveResult} onShare={shareResult} onRetry={() => updateFlow('photo-ready')} />
+      <InlinePanelSection panel={activePanel} onClose={() => setActivePanel('none')} onUpload={() => updateFlow('photo-ready')} onShowReport={() => updateFlow('report-ready')} />
+      <UtilitySection state={flowState} onUpload={() => updateFlow('photo-ready')} onShowReport={() => updateFlow('report-ready')} onTryOn={() => updateFlow('tryon-ready')} onPanel={showPanel} />
     </div>
   </div></main>
 }
