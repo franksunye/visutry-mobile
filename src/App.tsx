@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { ReactNode } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import {
   ArrowLeft, ArrowRight, Camera, Check, ChevronRight, FileText, Glasses, Heart,
   Home, Image as ImageIcon, LockKeyhole, Maximize2, MoreHorizontal, Ruler,
@@ -53,7 +53,7 @@ function BottomNav({ tab, onTab }: { tab: Tab; onTab: (tab: Tab) => void }) {
     ['tryon', '试戴', <Glasses />],
     ['profile', '我的', <UserRound />],
   ]
-  return <nav className="bottom-nav">{items.map(([key, label, icon]) =>
+  return <nav className="bottom-nav" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>{items.map(([key, label, icon]) =>
     <button key={key} className={tab === key ? 'active' : ''} onClick={() => onTab(key)}>{icon}<span>{label}</span></button>,
   )}</nav>
 }
@@ -98,7 +98,7 @@ function AnalyzingScreen({ go, back }: { go: (p: FlowStep) => void; back: () => 
     return () => window.clearInterval(id)
   }, [])
   return <div className="screen analysis"><TopBar title="AI 检测中" back={back} /><div className="analysis-body"><h1>AI 分析中</h1><p>预计需要 10–15 秒</p>
-    <button className="progress-ring" style={{ '--progress': `${progress * 3.6}deg` } as React.CSSProperties} onClick={() => go('report')}><span>{progress}<small>%</small></span></button>
+    <button className="progress-ring" style={{ '--progress': `${progress * 3.6}deg` } as CSSProperties} onClick={() => go('report')}><span>{progress}<small>%</small></span></button>
     <div className="analysis-steps">{['照片质量检测', '面部关键点识别', '脸型比例计算', '生成镜框推荐'].map((s, i) => <div className={i < 1 ? 'done' : i === 1 ? 'doing' : ''} key={s}><span>{i < 1 ? <Check /> : i === 1 ? <i /> : ''}</span><b>{s}</b><small>{i < 1 ? '已完成' : i === 1 ? '进行中' : '等待中'}</small></div>)}</div>
     <button className="security-note"><ShieldCheck /><span><b>本地优先处理</b><small>正式版将尽量在设备端完成 face geometry 分析</small></span><ChevronRight /></button>
     <PrimaryButton onClick={() => go('report')}>查看分析报告</PrimaryButton>
