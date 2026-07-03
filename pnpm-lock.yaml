@@ -4,24 +4,19 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-overrides:
-  '@visutry/tryon-core': file:vendor/sdk-packages/visutry-tryon-core-0.2.0.tgz
-  '@visutry/tryon-web': file:vendor/sdk-packages/visutry-tryon-web-0.2.0.tgz
-  '@visutry/recommender': file:vendor/sdk-packages/visutry-recommender-0.2.0.tgz
-
 importers:
 
   .:
     dependencies:
       '@visutry/recommender':
-        specifier: file:vendor/sdk-packages/visutry-recommender-0.2.0.tgz
-        version: file:vendor/sdk-packages/visutry-recommender-0.2.0.tgz
+        specifier: ^0.2.0
+        version: 0.2.1
       '@visutry/tryon-core':
-        specifier: file:vendor/sdk-packages/visutry-tryon-core-0.2.0.tgz
-        version: file:vendor/sdk-packages/visutry-tryon-core-0.2.0.tgz
+        specifier: ^0.2.0
+        version: 0.2.0
       '@visutry/tryon-web':
-        specifier: file:vendor/sdk-packages/visutry-tryon-web-0.2.0.tgz
-        version: file:vendor/sdk-packages/visutry-tryon-web-0.2.0.tgz(@mediapipe/tasks-vision@0.10.35)(three@0.185.1)
+        specifier: ^0.2.0
+        version: 0.2.1(@mediapipe/tasks-vision@0.10.35)(three@0.185.1)
       lucide-react:
         specifier: ^0.294.0
         version: 0.294.0(react@18.3.1)
@@ -1006,19 +1001,16 @@ packages:
   '@types/trusted-types@2.0.7':
     resolution: {integrity: sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw==}
 
-  '@visutry/recommender@file:vendor/sdk-packages/visutry-recommender-0.2.0.tgz':
-    resolution: {integrity: sha512-7w5SQiOTgQPpcz5qKk68DZoWynW94Bbf/NVdZKUik4zQoOmxk7KtiG4/Dur/zhTOUP1+eZm/o1ppFYwaqD49dA==}
-    version: 0.2.0
+  '@visutry/recommender@0.2.1':
+    resolution: {integrity: sha512-CF6G2DQGGDV7TZTuv0wGnzGtSVBqD8TNZ3BQgxzgq/Hb49RHwmJeV1dVcl6iTe7JFa1XEwxznv7+EyfgFBD25w==}
     engines: {node: '>=18.0.0'}
 
-  '@visutry/tryon-core@file:vendor/sdk-packages/visutry-tryon-core-0.2.0.tgz':
-    resolution: {integrity: sha512-G9Ab+jVS7h2XS+Vp3LzFtv7P2LYv1ujGcjWAPhEhOAUjv6/1WeDP8MJZTbfp3FW/AihBpIMuNqUZFF58V2XI/Q==}
-    version: 0.2.0
+  '@visutry/tryon-core@0.2.0':
+    resolution: {integrity: sha512-+eodLvEiQVXF2KgaWG8jNS97EzxP977d2ki33RhxEVYBDKKNWqbpdM+1YOIAE/RO+G9/poN9wO79FTt93u6X5w==}
     engines: {node: '>=18.0.0'}
 
-  '@visutry/tryon-web@file:vendor/sdk-packages/visutry-tryon-web-0.2.0.tgz':
-    resolution: {integrity: sha512-QKUJJhvH17VkvAvrBloZnHBiIvw1mLd4RQ0AP58Wgg68AUWkztAcaO/8LVj+13GW0u8VOsqQfCkMmTkePEww3g==}
-    version: 0.2.0
+  '@visutry/tryon-web@0.2.1':
+    resolution: {integrity: sha512-PYgIuPb53M79Xf7PL9gkf8TD8R/6ufK6t66rx48YkW4NfjA21VQ3xyPFgN43T6UfdIjt0cAaoelFF1dR4zX+yA==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       '@mediapipe/tasks-vision': '>=0.10.0 <1.0.0'
@@ -3392,16 +3384,16 @@ snapshots:
 
   '@types/trusted-types@2.0.7': {}
 
-  '@visutry/recommender@file:vendor/sdk-packages/visutry-recommender-0.2.0.tgz':
+  '@visutry/recommender@0.2.1':
     dependencies:
-      '@visutry/tryon-core': file:vendor/sdk-packages/visutry-tryon-core-0.2.0.tgz
+      '@visutry/tryon-core': 0.2.0
 
-  '@visutry/tryon-core@file:vendor/sdk-packages/visutry-tryon-core-0.2.0.tgz': {}
+  '@visutry/tryon-core@0.2.0': {}
 
-  '@visutry/tryon-web@file:vendor/sdk-packages/visutry-tryon-web-0.2.0.tgz(@mediapipe/tasks-vision@0.10.35)(three@0.185.1)':
+  '@visutry/tryon-web@0.2.1(@mediapipe/tasks-vision@0.10.35)(three@0.185.1)':
     dependencies:
       '@mediapipe/tasks-vision': 0.10.35
-      '@visutry/tryon-core': file:vendor/sdk-packages/visutry-tryon-core-0.2.0.tgz
+      '@visutry/tryon-core': 0.2.0
       three: 0.185.1
 
   '@vitejs/plugin-react@4.7.0(vite@5.4.21(@types/node@20.19.43)(terser@5.48.0))':
