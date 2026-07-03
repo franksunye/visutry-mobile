@@ -1,12 +1,34 @@
-# VisuTry Mobile Single Page Flow
+# VisuTry Mobile IA: Stateful Home + Lightweight Views
 
-This branch changes the early mobile product direction from tab navigation to a single-page stateful tool.
+This branch changes the early mobile product direction away from tab navigation.
+
+The product is not a multi-tab app, and it is also not a page that expands every possible function inline. It is a lightweight tool with one primary home state and a small set of focused secondary views.
 
 ## Product principle
 
-The early version is not a multi-section mobile app. It is a lightweight tool that helps a user complete one job:
+The early version helps a user complete one job:
 
 > Upload a face photo → get a face report → review recommended frames → preview try-on results.
+
+## Core model
+
+### Home is the main state surface
+
+Home answers:
+
+- What is my current state?
+- What is the next best action?
+- What core result do I already have?
+
+### Secondary views are focused task/detail surfaces
+
+Secondary views are allowed, but they must remain lightweight and always return directly to Home.
+
+There is no bottom tab navigation.
+There is no multi-level stack.
+There is only:
+
+`Home → focused view → Home`
 
 ## Flow states
 
@@ -19,107 +41,89 @@ type FlowState =
   | 'tryon-ready'
 ```
 
-## Inline panels
-
-Secondary actions do not open new pages. They expand inline panels inside the same page.
+## View states
 
 ```ts
-type InlinePanel =
-  | 'none'
-  | 'details'
-  | 'privacy'
+type ViewState =
+  | 'home'
+  | 'report-detail'
+  | 'frames'
+  | 'tryon'
   | 'history'
   | 'settings'
-  | 'saved'
+  | 'poster'
 ```
 
-## User scenarios
+## Home content rules
 
-### 1. New user
+Home should show summaries and primary CTAs only.
 
-Show a simple hero and one primary action: start face analysis.
+Allowed on Home:
 
-Available actions:
+- current status hero
+- photo check when photo is selected
+- analysis progress when analyzing
+- report summary when report exists
+- top recommended frames summary
+- try-on summary after try-on is ready
+- small utility entry points
 
-- Start analysis → `photo-ready`
-- View sample report → `report-ready`
-- View recommended frames → `tryon-ready`
-- Open settings → inline settings panel
+Avoid on Home:
 
-### 2. Photo ready
+- full report details
+- full frame lists
+- history lists
+- settings content
+- privacy explanation blocks
+- poster generation content
 
-Show the selected photo, quality tips, privacy note, and start analysis CTA.
+Those belong in secondary views.
 
-Available actions:
+## Secondary view rules
 
-- Start analysis → `analyzing`
-- Re-select photo → `photo-ready`
-- Privacy note → inline privacy panel
+Each secondary view has one clear top escape:
 
-### 3. Analyzing
+`← 首页`
 
-Show inline progress and analysis steps on the same page.
+This is intentionally different from generic back navigation. It stabilizes the user mental model: every secondary task returns to the main home state.
 
-No navigation controls are needed. When progress completes, the page automatically moves to `report-ready`.
+Secondary views should be shallow and focused:
 
-### 4. Report ready
-
-Show report summary, metrics, frame recommendations, and CTA to preview try-on.
-
-Available actions:
-
-- Try recommended frames → `tryon-ready`
-- View detail / size / style / recommendation logic → inline details panel
-- Privacy → inline privacy panel
-- Reanalyze → `photo-ready`
-- History → inline history panel
-- Settings → inline settings panel
-
-### 5. Try-on ready
-
-Show the four recommended try-on previews and secondary actions.
-
-Available actions:
-
-- Select / save a result → inline saved panel
-- Generate poster → inline saved/poster placeholder
-- Reanalyze → `photo-ready`
-- Return to report summary → `report-ready`
+- `report-detail`: full report, metrics, size/style explanation
+- `frames`: complete recommended frame list and avoid list
+- `tryon`: full try-on preview grid and save/poster actions
+- `history`: recent reports and create-new-report action
+- `settings`: privacy, data, notification placeholder, reset
+- `poster`: poster/export placeholder
 
 ## Interaction rules
 
 1. No bottom tabs.
-2. No second-level page stack for the early version.
-3. The page changes by state, not by navigation depth.
-4. Every visible clickable item must either:
+2. No multi-level page stack.
+3. Home changes by `FlowState`.
+4. Secondary screens change by `ViewState`.
+5. Every secondary view must offer a visible `首页` return action.
+6. Every visible clickable item must either:
    - change `FlowState`,
-   - open an `InlinePanel`,
-   - close an `InlinePanel`, or
-   - display a clear feedback notice.
-5. Labels such as `已生成` or `Top 4` are status text, not buttons.
-6. Secondary settings/history/privacy/details are inline panels, not separate pages.
+   - change `ViewState`,
+   - return to Home,
+   - or display a clear feedback notice.
+7. Labels such as `已生成` or `Top 4` are status text, not buttons.
 
 ## Review checklist
 
-When reviewing the prototype locally, verify that each of these actions has an understandable outcome:
+When reviewing locally, verify these flows:
 
-- Start face analysis
-- View sample report
-- Re-select photo
-- Start AI analysis
-- Wait for analysis to finish
-- Open report details
-- Open privacy explanation
-- Open recommended frames
-- Open try-on preview
-- Save try-on result
-- Generate poster placeholder
-- Reanalyze a new photo
-- Open settings
-- Enable notification placeholder
-- Open history
-- Return from an inline panel
-- Reset current flow
+- New user → start face analysis → photo check
+- Photo check → start analysis → auto report ready
+- Report summary → full report → 首页
+- Report summary → recommended frames → 首页
+- Recommended frames → try-on → 首页
+- Try-on → save result → 首页 with feedback
+- Try-on → poster placeholder → 首页
+- Home → history → create new report
+- Home → settings/privacy → 首页
+- Reset current flow → empty state
 
 ## Next engineering step
 
