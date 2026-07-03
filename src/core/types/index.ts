@@ -1,4 +1,4 @@
-import type { FaceShapeResult } from '@visutry/tryon-core'
+import type { FaceShapeResult, NormalizedFaceResult } from '@visutry/tryon-core'
 
 /**
  * Core business types — aligned with the visutry main site.
@@ -75,6 +75,7 @@ export interface FaceTryOnPlacement {
 export interface FaceShapeAnalysisResult {
   geometry: FaceGeometryAnalysis
   sdkResult?: FaceShapeResult
+  faceResult?: NormalizedFaceResult | null
   tryOnPlacement?: FaceTryOnPlacement
 }
 

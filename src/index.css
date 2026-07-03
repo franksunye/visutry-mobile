@@ -9,4 +9,5 @@
 @media (max-width:360px){.page-pad{padding-left:13px;padding-right:13px}.hero-card{margin-left:10px;margin-right:10px}.topbar{grid-template-columns:42px 1fr 68px}.tryon-grid .portrait,.social-grid .portrait{height:155px}}
 .portrait>.glasses-overlay{width:56%;height:22%;left:22%;top:34%}
 .portrait.actual-photo{background:#111827}.portrait.actual-photo img{object-fit:contain;background:#111827}
-.portrait .glasses-asset-overlay{position:absolute;height:auto;object-fit:contain;background:transparent;mix-blend-mode:multiply;z-index:4;transform-origin:50% 46%;pointer-events:none}.portrait.actual-photo .glasses-asset-overlay{background:transparent}.frame-thumbnail{width:100%;height:100%;display:block;object-fit:contain;border-radius:10px}
+.portrait .glasses-asset-overlay{position:absolute;height:auto;object-fit:contain;background:transparent;mix-blend-mode:multiply;z-index:4;transform-origin:50% 46%;pointer-events:none}.portrait.actual-photo .glasses-asset-overlay{background:transparent}
+.landmark-canvas{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:3}.frame-thumbnail{width:100%;height:100%;display:block;object-fit:contain;border-radius:10px}

@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
-import type { FaceShapeResult, RecommendedGlasses, FaceMetrics } from '@visutry/tryon-core'
+import type { FaceShapeResult, RecommendedGlasses, FaceMetrics, NormalizedFaceResult } from '@visutry/tryon-core'
 import type { FaceShapeAnalysisResult, FaceTryOnPlacement } from '@core/types'
 import { GLASSES_INVENTORY, getGlassesPreset } from '@core/catalog/glasses-presets'
 import { initWebPlatform } from './platform/web'
 import { getPlatform } from '@core/platform'
 import { Recommender } from '@visutry/recommender'
+import { LandmarkOverlay } from '@visutry/tryon-web'
 import {
   ArrowLeft, ArrowRight, Camera, Check, ChevronRight, FileText, Glasses, Heart,
   Image as ImageIcon, LockKeyhole, MoreHorizontal, Ruler, Settings,
@@ -96,10 +97,12 @@ function GlassOverlay({ frame, placement }: { frame: FrameCard; placement?: Face
   return <img className="glasses-asset-overlay" src={frame.thumbnailUrl} alt="" aria-hidden="true" style={style} />
 }
 
-function Portrait({ glasses, className = '', src, placement }: { glasses?: FrameCard | false; className?: string; src?: string | null; placement?: FaceTryOnPlacement }) {
+function Portrait({ glasses, className = '', src, placement, showLandmarks, faceResult }: { glasses?: FrameCard | false; className?: string; src?: string | null; placement?: FaceTryOnPlacement; showLandmarks?: boolean; faceResult?: NormalizedFaceResult | null }) {
   const actual = Boolean(src)
   const containerRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const overlayRef = useRef<LandmarkOverlay | null>(null)
   const [displayPlacement, setDisplayPlacement] = useState(placement)
   const [imageReady, setImageReady] = useState(0)
 
@@ -129,7 +132,29 @@ function Portrait({ glasses, className = '', src, placement }: { glasses?: Frame
     return () => observer.disconnect()
   }, [placement, src, imageReady])
 
-  return <div ref={containerRef} className={`portrait ${actual ? 'actual-photo' : ''} ${className}`}><img ref={imageRef} onLoad={() => setImageReady((value) => value + 1)} src={src ?? portrait} alt={actual ? '本次分析照片' : '示例模特'} />{glasses && <GlassOverlay frame={glasses} placement={displayPlacement} />}</div>
+  // Landmark mesh overlay rendering
+  useEffect(() => {
+    if (!showLandmarks || !faceResult || !canvasRef.current || !imageRef.current) return
+    const canvas = canvasRef.current
+    const img = imageRef.current
+
+    const draw = () => {
+      if (!img.naturalWidth || !img.naturalHeight) return
+      if (!overlayRef.current) {
+        overlayRef.current = new LandmarkOverlay(canvas)
+      }
+      overlayRef.current.renderFromFace(faceResult, img.naturalWidth, img.naturalHeight)
+    }
+
+    // Double RAF ensures the image has rendered before drawing the canvas
+    requestAnimationFrame(() => requestAnimationFrame(draw))
+
+    const ro = new ResizeObserver(() => draw())
+    if (containerRef.current) ro.observe(containerRef.current)
+    return () => ro.disconnect()
+  }, [showLandmarks, faceResult, imageReady])
+
+  return <div ref={containerRef} className={`portrait ${actual ? 'actual-photo' : ''} ${className}`}><img ref={imageRef} onLoad={() => setImageReady((value) => value + 1)} src={src ?? portrait} alt={actual ? '本次分析照片' : '示例模特'} />{showLandmarks && faceResult && <canvas ref={canvasRef} className="landmark-canvas" />}{glasses && <GlassOverlay frame={glasses} placement={displayPlacement} />}</div>
 }
 
 function SectionTitle({ title, action, onAction }: { title: string; action?: string; onAction?: () => void }) {
@@ -202,12 +227,12 @@ function AnalysisCard({ visible, progress }: { visible: boolean; progress: numbe
   </section>
 }
 
-function ReportSummaryCard({ visible, faceShape, frames, photoUrl, onDetail, onFrames, onTryOn }: { visible: boolean; faceShape?: FaceShapeResult; frames: FrameCard[]; photoUrl: string | null; onDetail: () => void; onFrames: () => void; onTryOn: () => void }) {
+function ReportSummaryCard({ visible, faceShape, frames, photoUrl, faceResult, onDetail, onFrames, onTryOn }: { visible: boolean; faceShape?: FaceShapeResult; frames: FrameCard[]; photoUrl: string | null; faceResult?: NormalizedFaceResult | null; onDetail: () => void; onFrames: () => void; onTryOn: () => void }) {
   if (!visible) return null
   const topFrame = frames[0]
   if (!faceShape || !topFrame) return null
   return <section className="content-section report-page"><SectionTitle title="脸型报告" action="查看完整报告" onAction={onDetail} />
-    <div className="result-card"><Portrait src={photoUrl} /><div><small>你的脸型：</small><h1>{FACE_NAMES[faceShape.primary]}</h1><span className="match"><Check /> {Math.round(faceShape.confidence * 100)}% 置信度</span><p>{FACE_SUMMARIES[faceShape.primary]}</p></div></div>
+    <div className="result-card"><Portrait src={photoUrl} showLandmarks faceResult={faceResult} /><div><small>你的脸型：</small><h1>{FACE_NAMES[faceShape.primary]}</h1><span className="match"><Check /> {Math.round(faceShape.confidence * 100)}% 置信度</span><p>{FACE_SUMMARIES[faceShape.primary]}</p></div></div>
     <div className="summary-card"><Sparkles /><span><b>SDK 首选：{topFrame.zh}</b><small>{topFrame.reason} · {topFrame.score}% 匹配</small></span></div>
     <div className="quick-nav"><button onClick={onDetail}><Ruler />报告</button><button onClick={onFrames}><Glasses />镜框</button><button onClick={onTryOn}><Wand2 />试戴</button></div>
     <PrimaryButton onClick={onTryOn}>试戴推荐镜框</PrimaryButton>
@@ -236,14 +261,14 @@ function HomeUtilities({ state, onUpload, onReport, onSettings }: { state: FlowS
   </section>
 }
 
-function HomeView({ state, progress, notice, faceShape, frames, photoUrl, placement, onUpload, onAnalyze, onReset, onView, onTryOn }: { state: FlowState; progress: number; notice: string | null; faceShape?: FaceShapeResult; frames: FrameCard[]; photoUrl: string | null; placement?: FaceTryOnPlacement; onUpload: () => void; onAnalyze: () => void; onReset: () => void; onView: (view: ViewState) => void; onTryOn: () => void }) {
-  return <div className="screen home-screen"><AppHeader state={state} onReset={onReset} onSettings={() => onView('settings')} /><StateHero state={state} faceShape={faceShape} frameCount={frames.length} onUpload={onUpload} onAnalyze={onAnalyze} onShowReport={() => onView('settings')} onTryOn={onTryOn} /><StatusNotice message={notice} /><PhotoCheckCard visible={state === 'photo-ready'} photoUrl={photoUrl} onAnalyze={onAnalyze} onPrivacy={() => onView('settings')} /><AnalysisCard visible={state === 'analyzing'} progress={progress} /><ReportSummaryCard visible={state === 'report-ready' || state === 'tryon-ready'} faceShape={faceShape} frames={frames} photoUrl={photoUrl} onDetail={() => onView('report-detail')} onFrames={() => onView('frames')} onTryOn={onTryOn} /><FrameSummaryCard visible={state === 'report-ready' || state === 'tryon-ready'} frames={frames} onFrames={() => onView('frames')} onTryOn={onTryOn} /><TryOnSummaryCard visible={state === 'tryon-ready'} frames={frames} photoUrl={photoUrl} placement={placement} onTryOn={() => onView('tryon')} onPoster={() => onView('poster')} /><HomeUtilities state={state} onUpload={onUpload} onReport={() => faceShape ? onView('report-detail') : onView('settings')} onSettings={() => onView('settings')} /></div>
+function HomeView({ state, progress, notice, faceShape, frames, photoUrl, placement, faceResult, onUpload, onAnalyze, onReset, onView, onTryOn }: { state: FlowState; progress: number; notice: string | null; faceShape?: FaceShapeResult; frames: FrameCard[]; photoUrl: string | null; placement?: FaceTryOnPlacement; faceResult?: NormalizedFaceResult | null; onUpload: () => void; onAnalyze: () => void; onReset: () => void; onView: (view: ViewState) => void; onTryOn: () => void }) {
+return <div className="screen home-screen"><AppHeader state={state} onReset={onReset} onSettings={() => onView('settings')} /><StateHero state={state} faceShape={faceShape} frameCount={frames.length} onUpload={onUpload} onAnalyze={onAnalyze} onShowReport={() => onView('settings')} onTryOn={onTryOn} /><StatusNotice message={notice} /><PhotoCheckCard visible={state === 'photo-ready'} photoUrl={photoUrl} onAnalyze={onAnalyze} onPrivacy={() => onView('settings')} /><AnalysisCard visible={state === 'analyzing'} progress={progress} /><ReportSummaryCard visible={state === 'report-ready' || state === 'tryon-ready'} faceShape={faceShape} frames={frames} photoUrl={photoUrl} faceResult={faceResult} onDetail={() => onView('report-detail')} onFrames={() => onView('frames')} onTryOn={onTryOn} /><FrameSummaryCard visible={state === 'report-ready' || state === 'tryon-ready'} frames={frames} onFrames={() => onView('frames')} onTryOn={onTryOn} /><TryOnSummaryCard visible={state === 'tryon-ready'} frames={frames} photoUrl={photoUrl} placement={placement} onTryOn={() => onView('tryon')} onPoster={() => onView('poster')} /><HomeUtilities state={state} onUpload={onUpload} onReport={() => faceShape ? onView('report-detail') : onView('settings')} onSettings={() => onView('settings')} /></div>
 }
 
-function ReportDetailView({ faceShape, frames, photoUrl, onHome, onFramesHome, onTryOnHome }: { faceShape: FaceShapeResult; frames: FrameCard[]; photoUrl: string | null; onHome: () => void; onFramesHome: () => void; onTryOnHome: () => void }) {
+function ReportDetailView({ faceShape, frames, photoUrl, faceResult, onHome, onFramesHome, onTryOnHome }: { faceShape: FaceShapeResult; frames: FrameCard[]; photoUrl: string | null; faceResult?: NormalizedFaceResult | null; onHome: () => void; onFramesHome: () => void; onTryOnHome: () => void }) {
   const ratios = faceShape.metrics.visutry || ({} as NonNullable<FaceMetrics['visutry']>)
   return <div className="screen"><DetailTopBar title="完整报告" onHome={onHome} /><div className="page-pad detail-page">
-    <div className="result-card"><Portrait src={photoUrl} /><div><small>你的脸型：</small><h1>{FACE_NAMES[faceShape.primary]}</h1><span className="match"><Check /> {Math.round(faceShape.confidence * 100)}% 置信度</span><p>{FACE_SUMMARIES[faceShape.primary]}</p></div></div>
+    <div className="result-card"><Portrait src={photoUrl} showLandmarks faceResult={faceResult} /><div><small>你的脸型：</small><h1>{FACE_NAMES[faceShape.primary]}</h1><span className="match"><Check /> {Math.round(faceShape.confidence * 100)}% 置信度</span><p>{FACE_SUMMARIES[faceShape.primary]}</p></div></div>
     <div className="metric-grid">{[
       ['脸长/脸宽比', ratios?.faceAspectRatio.toFixed(2) ?? faceShape.metrics.widthHeightRatio.toFixed(2), '实测'],
       ['SDK 推荐数', String(frames.length), 'Top picks'],
@@ -469,14 +494,14 @@ export default function App() {
     return () => window.clearInterval(analysisInterval)
   }, [flowState])
 
-  if (view === 'report-detail' && analysis?.sdkResult) return <main className="app-shell"><div className="device-frame"><ReportDetailView faceShape={analysis.sdkResult} frames={frames} photoUrl={uploadedImageUrl} onHome={goHome} onFramesHome={() => updateFlowHome('report-ready', '已回到首页，可查看 SDK 推荐摘要')} onTryOnHome={startTryOnHome} /></div></main>
+  if (view === 'report-detail' && analysis?.sdkResult) return <main className="app-shell"><div className="device-frame"><ReportDetailView faceShape={analysis.sdkResult} frames={frames} photoUrl={uploadedImageUrl} faceResult={analysis.faceResult} onHome={goHome} onFramesHome={() => updateFlowHome('report-ready', '已回到首页，可查看 SDK 推荐摘要')} onTryOnHome={startTryOnHome} /></div></main>
   if (view === 'frames') return <main className="app-shell"><div className="device-frame"><FramesView frames={frames} onHome={goHome} onTryOnHome={startTryOnHome} /></div></main>
   if (view === 'tryon') return <main className="app-shell"><div className="device-frame"><TryOnView frames={frames} photoUrl={uploadedImageUrl} placement={analysis?.tryOnPlacement} onHome={goHome} onSave={saveTryOn} onPosterHome={() => updateFlowHome('tryon-ready', '可从首页的试戴预览生成海报')} onUploadHome={triggerPhotoUpload} /></div></main>
   if (view === 'settings') return <main className="app-shell"><div className="device-frame"><SettingsView onHome={goHome} onUploadHome={triggerPhotoUpload} /></div></main>
   if (view === 'poster') return <main className="app-shell"><div className="device-frame"><PosterView frames={frames} photoUrl={uploadedImageUrl} placement={analysis?.tryOnPlacement} onHome={goHome} onSave={saveTryOn} /></div></main>
 
   return <>
-    <main className="app-shell"><div className="device-frame"><HomeView state={flowState} progress={progress} notice={notice} faceShape={analysis?.sdkResult} frames={frames} photoUrl={uploadedImageUrl} placement={analysis?.tryOnPlacement} onUpload={triggerPhotoUpload} onAnalyze={startAnalysis} onReset={resetFlow} onView={openViewFromHome} onTryOn={startTryOnHome} /></div></main>
+    <main className="app-shell"><div className="device-frame"><HomeView state={flowState} progress={progress} notice={notice} faceShape={analysis?.sdkResult} frames={frames} photoUrl={uploadedImageUrl} placement={analysis?.tryOnPlacement} faceResult={analysis?.faceResult} onUpload={triggerPhotoUpload} onAnalyze={startAnalysis} onReset={resetFlow} onView={openViewFromHome} onTryOn={startTryOnHome} /></div></main>
 
     {/* Hidden file upload for photo analysis */}
     <input

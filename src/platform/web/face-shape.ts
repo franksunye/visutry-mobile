@@ -97,10 +97,12 @@ export class WebFaceShapeAnalyzer implements FaceShapeAnalyzer {
       }
 
       const result: FaceShapeResult = await analyzer.analyzeFaceShapeFromImage(imageElement)
+      const faceResult = analyzer.getLastFaceResult()
       return {
         geometry: mapFaceShape(result),
         sdkResult: result,
-        tryOnPlacement: getTryOnPlacement(analyzer.getLastFaceResult()),
+        faceResult,
+        tryOnPlacement: getTryOnPlacement(faceResult),
       }
     } catch (error) {
       console.error('[WebFaceShapeAnalyzer] analyze failed:', error)
