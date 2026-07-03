@@ -1,4 +1,4 @@
-# VisuTry Mobile IA: Stateful Home + Lightweight Views
+# VisuTry Mobile IA: Stateful Home + Strict Two-Level Views
 
 This branch changes the early mobile product direction away from tab navigation.
 
@@ -12,7 +12,7 @@ The early version helps a user complete one job:
 
 ## Core model
 
-### Home is the main state surface
+### Home is the only navigation hub
 
 Home answers:
 
@@ -20,12 +20,14 @@ Home answers:
 - What is the next best action?
 - What core result do I already have?
 
-### Secondary views are focused task/detail surfaces
+### Secondary views are terminal
 
-Secondary views are allowed, but they must remain lightweight and always return directly to Home.
+Secondary views are allowed, but they are terminal task/detail surfaces.
 
 There is no bottom tab navigation.
 There is no multi-level stack.
+There is no secondary-to-secondary navigation.
+
 There is only:
 
 `Home → focused view → Home`
@@ -79,6 +81,54 @@ Avoid on Home:
 
 Those belong in secondary views.
 
+## Strict two-level navigation rule
+
+The app has only two levels:
+
+- Level 1: Home
+- Level 2: one focused secondary view
+
+Secondary views cannot open another secondary view.
+
+Allowed secondary-view actions:
+
+1. Return Home.
+2. Update `FlowState` and return Home.
+3. Show a simple feedback notice on Home.
+
+Disallowed:
+
+- `report-detail → frames`
+- `report-detail → tryon`
+- `frames → report-detail`
+- `frames → tryon`
+- `tryon → poster`
+- `history → report-detail`
+- `settings → report-detail`
+
+Instead, these actions update Home state and return to Home.
+
+Examples:
+
+```ts
+// History item selected
+setFlowState('report-ready')
+setView('home')
+```
+
+```ts
+// Frames page try-on CTA
+setFlowState('tryon-ready')
+setView('home')
+```
+
+```ts
+// Try-on page poster CTA
+setFlowState('tryon-ready')
+setView('home')
+setNotice('已生成海报占位')
+```
+
 ## Secondary view rules
 
 Each secondary view has one clear top escape:
@@ -103,12 +153,13 @@ Secondary views should be shallow and focused:
 3. Home changes by `FlowState`.
 4. Secondary screens change by `ViewState`.
 5. Every secondary view must offer a visible `首页` return action.
-6. Every visible clickable item must either:
-   - change `FlowState`,
-   - change `ViewState`,
+6. Secondary views are terminal and cannot navigate to other secondary views.
+7. Every visible clickable item must either:
+   - change `FlowState` and return Home,
+   - change `ViewState` from Home only,
    - return to Home,
-   - or display a clear feedback notice.
-7. Labels such as `已生成` or `Top 4` are status text, not buttons.
+   - or display a clear feedback notice on Home.
+8. Labels such as `已生成` or `Top 4` are status text, not buttons.
 
 ## Review checklist
 
@@ -116,12 +167,12 @@ When reviewing locally, verify these flows:
 
 - New user → start face analysis → photo check
 - Photo check → start analysis → auto report ready
-- Report summary → full report → 首页
-- Report summary → recommended frames → 首页
-- Recommended frames → try-on → 首页
-- Try-on → save result → 首页 with feedback
-- Try-on → poster placeholder → 首页
-- Home → history → create new report
+- Home → full report → 首页
+- Home → recommended frames → 首页
+- Home → try-on → save result → 首页 with feedback
+- Home → try-on → poster placeholder → 首页 with feedback
+- Home → history → select report → 首页 with report state
+- Home → history → create new report → 首页 with photo-ready state
 - Home → settings/privacy → 首页
 - Reset current flow → empty state
 
