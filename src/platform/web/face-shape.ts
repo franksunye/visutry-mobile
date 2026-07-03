@@ -33,7 +33,7 @@ function mapFaceShape(result: FaceShapeResult): FaceGeometryAnalysis {
     qualityScore: Math.round(result.confidence * 100),
     measuredShape: measured,
     measuredConfidence: result.confidence,
-    ratios: result.metrics.visutry,
+    ratios: result.metrics.visutry || undefined,
     signals: result.candidates.map((c) => `${c.shape}: ${c.score.toFixed(2)}`),
     warnings: result.warnings.map((w) => String(w)),
   }

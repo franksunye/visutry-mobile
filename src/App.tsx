@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
-import type { FaceShapeResult, RecommendedGlasses } from '@visutry/tryon-core'
+import type { FaceShapeResult, RecommendedGlasses, FaceMetrics } from '@visutry/tryon-core'
 import type { FaceShapeAnalysisResult, FaceTryOnPlacement } from '@core/types'
 import { GLASSES_INVENTORY, getGlassesPreset } from '@core/catalog/glasses-presets'
 import { initWebPlatform } from './platform/web'
@@ -241,7 +241,7 @@ function HomeView({ state, progress, notice, faceShape, frames, photoUrl, placem
 }
 
 function ReportDetailView({ faceShape, frames, photoUrl, onHome, onFramesHome, onTryOnHome }: { faceShape: FaceShapeResult; frames: FrameCard[]; photoUrl: string | null; onHome: () => void; onFramesHome: () => void; onTryOnHome: () => void }) {
-  const ratios = faceShape.metrics.visutry
+  const ratios = faceShape.metrics.visutry || ({} as NonNullable<FaceMetrics['visutry']>)
   return <div className="screen"><DetailTopBar title="完整报告" onHome={onHome} /><div className="page-pad detail-page">
     <div className="result-card"><Portrait src={photoUrl} /><div><small>你的脸型：</small><h1>{FACE_NAMES[faceShape.primary]}</h1><span className="match"><Check /> {Math.round(faceShape.confidence * 100)}% 置信度</span><p>{FACE_SUMMARIES[faceShape.primary]}</p></div></div>
     <div className="metric-grid">{[
