@@ -5,7 +5,7 @@ import type { FaceShapeAnalysisResult, FaceTryOnPlacement } from '@core/types'
 import { GLASSES_INVENTORY, getGlassesPreset } from '@core/catalog/glasses-presets'
 import { initWebPlatform } from './platform/web'
 import { getPlatform } from '@core/platform'
-import { Recommender } from '../packages/visutry-tryon-sdk/packages/recommender/dist/index.js'
+import { Recommender } from '@visutry/recommender'
 import {
   ArrowLeft, ArrowRight, Camera, Check, ChevronRight, FileText, Glasses, Heart,
   Image as ImageIcon, LockKeyhole, MoreHorizontal, Ruler, Settings,

@@ -19,6 +19,7 @@ dist-ssr/
 .DS_Store
 *.swp
 *.swo
+*.code-workspace
 
 # Logs
 npm-debug.log*
@@ -36,7 +37,4 @@ coverage/
 dev-dist/
 *.tsbuildinfo
 
-# SDK submodule build artifacts
-packages/visutry-tryon-sdk/*/dist/
-packages/visutry-tryon-sdk/*/node_modules/
-packages/visutry-tryon-sdk/node_modules/
+
