@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import {
   ArrowLeft, ArrowRight, Bell, Camera, Check, ChevronRight, FileText, Glasses, Heart,
   Image as ImageIcon, LockKeyhole, MoreHorizontal, Ruler, Settings,
-  ShieldCheck, Sparkles, Trash2, UserRound, Wand2,
+  ShieldCheck, Sparkles, Trash2, Wand2,
 } from 'lucide-react'
 
 type FlowState = 'empty' | 'photo-ready' | 'analyzing' | 'report-ready' | 'tryon-ready'
