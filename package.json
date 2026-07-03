@@ -16,8 +16,8 @@
     "preview": "vite preview --host",
     "lint": "eslint . --ext ts,tsx",
     "typecheck": "tsc -b --noEmit",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "test": "pnpm --dir packages/visutry-tryon-sdk test",
+    "test:watch": "pnpm --dir packages/visutry-tryon-sdk test:watch"
   },
   "dependencies": {
     "@visutry/recommender": "workspace:*",

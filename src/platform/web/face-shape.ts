@@ -1,22 +1,15 @@
 /**
  * Web face shape analyzer — implements FaceShapeAnalyzer via @visutry/tryon-web.
  *
- * This file IS allowed to use DOM APIs (ImageBitmap, createImageBitmap).
- * The WeChat counterpart (platform/wechat/face-shape.ts) will use
- * @visutry/tryon-wechat instead.
- *
- * NOTE: SDK 1.0.0-beta API — createVisuTryWebSDK requires a canvas for the
- * Three.js renderer. For face-shape-only analysis (no AR try-on), we create
- * an offscreen canvas that is never displayed.
+ * Uses the lightweight `createVisuTryImageAnalyzer` (MediaPipe only, no Three.js)
+ * and `analyzeFaceShapeFromImage` for static photo analysis — no camera required.
  */
 
-import type { VisuTrySDK, FaceShapeResult } from '@visutry/tryon-core'
+import type { FaceShapeResult, NormalizedFaceResult } from '@visutry/tryon-core'
 import type { FaceShapeAnalyzer } from '@core/face-shape/analyzer'
-import type { FaceGeometryAnalysis, ImageInput } from '@core/types'
+import type { FaceGeometryAnalysis, FaceShapeAnalysisResult, FaceTryOnPlacement, ImageInput } from '@core/types'
 
-const SDK_ENABLED = import.meta.env.VITE_FACE_SHAPE_SDK_ENABLED === 'true'
-
-/** Map SDK 1.0 FaceShapeResult to our FaceGeometryAnalysis */
+/** Map SDK FaceShapeResult to our FaceGeometryAnalysis */
 function mapFaceShape(result: FaceShapeResult): FaceGeometryAnalysis {
   const shapeMap: Record<string, FaceGeometryAnalysis['measuredShape']> = {
     oval: 'oval',
@@ -25,6 +18,7 @@ function mapFaceShape(result: FaceShapeResult): FaceGeometryAnalysis {
     heart: 'heart',
     diamond: 'diamond',
     oblong: 'oblong',
+    triangle: 'triangle',
     unknown: undefined,
   }
 
@@ -39,84 +33,105 @@ function mapFaceShape(result: FaceShapeResult): FaceGeometryAnalysis {
     qualityScore: Math.round(result.confidence * 100),
     measuredShape: measured,
     measuredConfidence: result.confidence,
+    ratios: result.metrics.visutry,
     signals: result.candidates.map((c) => `${c.shape}: ${c.score.toFixed(2)}`),
     warnings: result.warnings.map((w) => String(w)),
   }
 }
 
+function getTryOnPlacement(face: NormalizedFaceResult | null): FaceTryOnPlacement | undefined {
+  const left = face?.landmarks.semantic.leftEyeOuter
+  const right = face?.landmarks.semantic.rightEyeOuter
+  const center = face?.landmarks.semantic.eyesCenter
+  if (!left || !right || !center) return undefined
+
+  const eyeDistance = Math.hypot(right.x - left.x, right.y - left.y)
+  return {
+    centerX: center.x,
+    centerY: center.y + eyeDistance * 0.12,
+    width: Math.min(0.78, Math.max(0.28, eyeDistance * 1.75)),
+    rotationDeg: Math.atan2(right.y - left.y, right.x - left.x) * 180 / Math.PI,
+  }
+}
+
+/** Load a File/Blob into an HTMLImageElement for SDK consumption. */
+async function fileToImage(file: File): Promise<HTMLImageElement> {
+  const url = URL.createObjectURL(file)
+  try {
+    const img = new Image()
+    img.src = url
+    await img.decode()
+    return img
+  } finally {
+    // Revoke after the image is decoded — the decoded bitmap is in memory.
+    URL.revokeObjectURL(url)
+  }
+}
+
 export class WebFaceShapeAnalyzer implements FaceShapeAnalyzer {
-  private sdkPromise: Promise<VisuTrySDK> | null = null
+  private analyzerPromise: Promise<{
+    analyzeFaceShapeFromImage(image: unknown): Promise<FaceShapeResult>
+    getLastFaceResult(): NormalizedFaceResult | null
+    destroy(): void
+  }> | null = null
 
-  private async getSdk(): Promise<VisuTrySDK> {
-    if (!this.sdkPromise) {
-      this.sdkPromise = (async () => {
-        const { createVisuTryWebSDK } = await import('@visutry/tryon-web')
-
-        // SDK 1.0 requires a canvas for the Three.js renderer.
-        // For face-shape-only analysis, create an offscreen canvas.
-        const canvas = document.createElement('canvas')
-        canvas.width = 1
-        canvas.height = 1
-        canvas.style.display = 'none'
-        document.body.appendChild(canvas)
-
-        const sdk = createVisuTryWebSDK({
-          canvas,
-          tracker: { mode: 'balanced' },
-          privacy: { processOnDeviceOnly: true, allowAnalytics: true },
-        })
-        await sdk.initialize()
-        return sdk
+  private async getAnalyzer() {
+    if (!this.analyzerPromise) {
+      this.analyzerPromise = (async () => {
+        const { createVisuTryImageAnalyzer } = await import('@visutry/tryon-web')
+        const analyzer = createVisuTryImageAnalyzer()
+        return analyzer
       })()
     }
-    return this.sdkPromise
+    return this.analyzerPromise
   }
 
-  async analyze(_image: ImageInput): Promise<FaceGeometryAnalysis> {
-    if (!SDK_ENABLED) {
-      return {
-        version: 'landmark-v1',
-        status: 'unavailable',
-        source: 'mediapipe-face-landmarker',
-        faceDetected: false,
-        faceCount: 0,
-        qualityScore: 0,
-        signals: [],
-        warnings: ['SDK face analysis disabled (VITE_FACE_SHAPE_SDK_ENABLED != true)'],
-      }
-    }
-
+  async analyze(image: ImageInput): Promise<FaceShapeAnalysisResult> {
     try {
-      const sdk = await this.getSdk()
-      const result: FaceShapeResult = await sdk.analyzeFaceShape()
-      return mapFaceShape(result)
-    } catch (error) {
+      const analyzer = await this.getAnalyzer()
+
+      // Convert the ImageInput data to an HTMLImageElement if it's a File/Blob.
+      let imageElement: unknown = image.data
+      if (image.data instanceof File || image.data instanceof Blob) {
+        imageElement = await fileToImage(image.data as File)
+      }
+
+      const result: FaceShapeResult = await analyzer.analyzeFaceShapeFromImage(imageElement)
       return {
-        version: 'landmark-v1',
-        status: 'unavailable',
-        source: 'mediapipe-face-landmarker',
-        faceDetected: false,
-        faceCount: 0,
-        qualityScore: 0,
-        signals: [],
-        warnings: [
-          error instanceof Error
-            ? `SDK face analysis failed: ${error.message}`
-            : 'SDK face analysis failed.',
-        ],
+        geometry: mapFaceShape(result),
+        sdkResult: result,
+        tryOnPlacement: getTryOnPlacement(analyzer.getLastFaceResult()),
+      }
+    } catch (error) {
+      console.error('[WebFaceShapeAnalyzer] analyze failed:', error)
+      return {
+        geometry: {
+          version: 'landmark-v1',
+          status: 'unavailable',
+          source: 'mediapipe-face-landmarker',
+          faceDetected: false,
+          faceCount: 0,
+          qualityScore: 0,
+          signals: [],
+          warnings: [
+            error instanceof Error
+              ? `SDK face analysis failed: ${error.message}`
+              : 'SDK face analysis failed.',
+          ],
+        },
       }
     }
   }
 
   async destroy(): Promise<void> {
-    if (this.sdkPromise) {
+    if (this.analyzerPromise) {
       try {
-        const sdk = await this.sdkPromise
-        sdk.destroy()
+        const analyzer = await this.analyzerPromise
+        analyzer.destroy()
       } catch {
         // ignore
       }
-      this.sdkPromise = null
+      this.analyzerPromise = null
     }
   }
 }

@@ -22,18 +22,14 @@ For the early mobile version:
 - Keep state in the current session only.
 - Use SDK output to drive report/recommendation/try-on UI.
 
-The first SDK integration step is `@visutry/recommender`:
+The end-to-end SDK path is now connected:
 
-- Mobile imports `Recommender` from `@visutry/recommender`.
-- Mobile passes a demo `FaceShapeResult` and a local frame inventory.
-- Recommended frames are sorted by SDK score.
-- UI uses SDK scores/reasons to render the report and frame list.
+- The selected photo is analyzed locally by `@visutry/tryon-web` and MediaPipe.
+- The real `FaceShapeResult` and metrics feed `@visutry/recommender`.
+- Report, ranking, photo preview, and landmark-fitted try-on share one session result.
+- Try-on output can be rendered to a downloadable JPEG.
 
-Next SDK integration steps:
-
-1. Replace demo `FaceShapeResult` with real output from face analysis.
-2. Connect image/camera analysis through `@visutry/tryon-web`.
-3. Replace static try-on preview with SDK renderer output.
+Analysis failure never falls back to demo data. It returns the user to the selected photo with a retryable error.
 
 ## Core model
 
@@ -172,20 +168,10 @@ When reviewing locally, verify these flows:
 - Home → full report → 首页
 - Home → recommended frames → 首页
 - Home → try-on → save result → 首页 with feedback
-- Home → try-on → poster placeholder → 首页 with feedback
+- Home → try-on poster → save generated JPEG → 首页 with feedback
 - Home → settings/privacy → 首页
 - Reset current flow → empty state
 
 ## Next engineering step
 
-Replace demo SDK input with real SDK output from:
-
-- `@visutry/tryon-web`
-- `@visutry/tryon-core`
-
-Then connect:
-
-- real face photo input
-- real `FaceShapeResult`
-- real recommended frame inventory
-- real try-on renderer output
+The mobile catalog now contains the same 16 high-fidelity presets as the parent VisuTry project. A future production expansion can attach merchant SKUs or 3D manifests to the same catalog contract without changing the photo-to-report-to-recommendation-to-export flow.

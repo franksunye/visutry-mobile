@@ -10,6 +10,7 @@
 import { registerPlatform } from '@core/platform'
 import { WebCameraService } from './camera'
 import { WebStorageService } from './storage'
+import { WebFaceShapeAnalyzer } from './face-shape'
 
 export { WebCameraService } from './camera'
 export { WebStorageService } from './storage'
@@ -19,13 +20,13 @@ let initialized = false
 
 export function initWebPlatform(): void {
   if (initialized) {
-    console.warn('[platform] Web platform already initialized')
     return
   }
 
   registerPlatform({
     camera: new WebCameraService(),
     storage: new WebStorageService(),
+    faceShapeAnalyzer: new WebFaceShapeAnalyzer(),
     platformName: 'web',
   })
 

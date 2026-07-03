@@ -1,3 +1,5 @@
+import type { FaceShapeResult } from '@visutry/tryon-core'
+
 /**
  * Core business types — aligned with the visutry main site.
  *
@@ -59,6 +61,21 @@ export interface FaceGeometryAnalysis {
   ratios?: FaceGeometryRatios
   signals: string[]
   warnings: string[]
+}
+
+/** Normalized placement derived from the detected eye landmarks. */
+export interface FaceTryOnPlacement {
+  centerX: number
+  centerY: number
+  width: number
+  rotationDeg: number
+}
+
+/** Complete output of one on-device SDK analysis. */
+export interface FaceShapeAnalysisResult {
+  geometry: FaceGeometryAnalysis
+  sdkResult?: FaceShapeResult
+  tryOnPlacement?: FaceTryOnPlacement
 }
 
 // ── Analysis report ──

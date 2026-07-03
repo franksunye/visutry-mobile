@@ -8,3 +8,5 @@
 @media (min-width:700px){.app-shell{padding:24px}.device-frame{min-height:860px;border-radius:32px;border:7px solid #121722}.screen{min-height:846px}.bottom-nav{position:absolute;border-radius:0 0 25px 25px}.topbar{position:relative}.subtabs{top:0}}
 @media (max-width:360px){.page-pad{padding-left:13px;padding-right:13px}.hero-card{margin-left:10px;margin-right:10px}.topbar{grid-template-columns:42px 1fr 68px}.tryon-grid .portrait,.social-grid .portrait{height:155px}}
 .portrait>.glasses-overlay{width:56%;height:22%;left:22%;top:34%}
+.portrait.actual-photo{background:#111827}.portrait.actual-photo img{object-fit:contain;background:#111827}
+.portrait .glasses-asset-overlay{position:absolute;height:auto;object-fit:contain;background:transparent;mix-blend-mode:multiply;z-index:4;transform-origin:50% 46%;pointer-events:none}.portrait.actual-photo .glasses-asset-overlay{background:transparent}.frame-thumbnail{width:100%;height:100%;display:block;object-fit:contain;border-radius:10px}
