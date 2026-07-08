@@ -41,7 +41,7 @@ export default defineConfig({
       },
       workbox: {
         // MediaPipe WASM model files — cache-first, long-lived
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,wasm}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,jpg,jpeg,webp,svg,wasm}'],
         // SDK models are large & immutable per version; never bust them
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
         runtimeCaching: [

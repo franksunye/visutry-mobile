@@ -6,13 +6,13 @@
  * recommendation rules that consume the analysis result.
  */
 
-import type { CanonicalFaceShape, FaceGeometryAnalysis, ImageInput } from '../types'
+import type { CanonicalFaceShape, FaceGeometryAnalysis, FaceShapeAnalysisResult, ImageInput } from '../types'
 
 // ── Analyzer interface (implemented by platform layer) ──
 
 export interface FaceShapeAnalyzer {
   /** Analyze an image and return face geometry */
-  analyze(image: ImageInput): Promise<FaceGeometryAnalysis>
+  analyze(image: ImageInput): Promise<FaceShapeAnalysisResult>
   /** Release SDK resources */
   destroy(): Promise<void>
 }

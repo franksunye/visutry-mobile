@@ -10,6 +10,7 @@
  */
 
 import type { ImageInput } from './types'
+import type { FaceShapeAnalyzer } from './face-shape/analyzer'
 
 // ── Camera ──
 
@@ -51,6 +52,7 @@ export interface StorageService {
 export interface PlatformCapabilities {
   camera: CameraService
   storage: StorageService
+  faceShapeAnalyzer: FaceShapeAnalyzer
   /** Platform name for analytics / debugging */
   readonly platformName: string
 }
