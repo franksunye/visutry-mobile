@@ -1,122 +1,143 @@
 /**
- * Web face shape analyzer — implements FaceShapeAnalyzer via @visutry/tryon-web.
+ * Web still-photo face analysis adapter.
  *
- * This file IS allowed to use DOM APIs (ImageBitmap, createImageBitmap).
- * The WeChat counterpart (platform/wechat/face-shape.ts) will use
- * @visutry/tryon-wechat instead.
- *
- * NOTE: SDK 1.0.0-beta API — createVisuTryWebSDK requires a canvas for the
- * Three.js renderer. For face-shape-only analysis (no AR try-on), we create
- * an offscreen canvas that is never displayed.
+ * This adapter consumes ImageInput.data, not the live camera. It uses the
+ * SDK's lightweight image-only entrypoint, so no Three.js renderer, canvas
+ * mount, camera permission or recording session is required.
  */
-
-import type { VisuTrySDK, FaceShapeResult } from '@visutry/tryon-core'
+import type { FaceShapeResult } from '@visutry/tryon-core'
+import type { ImageAnalyzer } from '@visutry/tryon-web/analyzer'
 import type { FaceShapeAnalyzer } from '@core/face-shape/analyzer'
+import { isCanonicalFaceShape } from '@core/types'
 import type { FaceGeometryAnalysis, ImageInput } from '@core/types'
 
 const SDK_ENABLED = import.meta.env.VITE_FACE_SHAPE_SDK_ENABLED === 'true'
 
-/** Map SDK 1.0 FaceShapeResult to our FaceGeometryAnalysis */
-function mapFaceShape(result: FaceShapeResult): FaceGeometryAnalysis {
-  const shapeMap: Record<string, FaceGeometryAnalysis['measuredShape']> = {
-    oval: 'oval',
-    round: 'round',
-    square: 'square',
-    heart: 'heart',
-    diamond: 'diamond',
-    oblong: 'oblong',
-    unknown: undefined,
-  }
+type BrowserImage = HTMLImageElement | HTMLCanvasElement | HTMLVideoElement | ImageBitmap
 
-  const measured = shapeMap[result.primary] ?? undefined
+function unavailable(message: string): FaceGeometryAnalysis {
+  return {
+    version: 'landmark-v1',
+    status: 'unavailable',
+    source: 'mediapipe-face-landmarker',
+    faceDetected: false,
+    faceCount: 0,
+    qualityScore: 0,
+    signals: [],
+    warnings: [message],
+  }
+}
+
+/** Keep the SDK's full seven-shape vocabulary and measured ratios. */
+function mapFaceShape(result: FaceShapeResult): FaceGeometryAnalysis {
+  const measured = isCanonicalFaceShape(result.primary) ? result.primary : undefined
 
   return {
     version: 'landmark-v1',
     status: measured ? 'measured' : 'unavailable',
     source: 'mediapipe-face-landmarker',
-    faceDetected: measured !== undefined,
-    faceCount: measured ? 1 : 0,
-    qualityScore: Math.round(result.confidence * 100),
+    // A successful image analysis means a face was detected even if the
+    // classifier returned "unknown".
+    faceDetected: true,
+    faceCount: 1,
+    qualityScore: Math.round(Math.max(0, Math.min(1, result.confidence)) * 100),
     measuredShape: measured,
     measuredConfidence: result.confidence,
+    ratios: result.metrics.visutry,
     signals: result.candidates.map((c) => `${c.shape}: ${c.score.toFixed(2)}`),
-    warnings: result.warnings.map((w) => String(w)),
+    warnings: result.warnings.map((warning) => String(warning)),
+  }
+}
+
+function isBrowserImage(data: unknown): data is BrowserImage {
+  return (
+    (typeof HTMLImageElement !== 'undefined' && data instanceof HTMLImageElement) ||
+    (typeof HTMLCanvasElement !== 'undefined' && data instanceof HTMLCanvasElement) ||
+    (typeof HTMLVideoElement !== 'undefined' && data instanceof HTMLVideoElement) ||
+    (typeof ImageBitmap !== 'undefined' && data instanceof ImageBitmap)
+  )
+}
+
+/**
+ * A camera capture supplies a Blob. The MediaPipe IMAGE-mode tracker expects
+ * a decoded browser image, not the Blob itself. Release the temporary URL on
+ * both success and failure; never upload the input.
+ */
+async function resolveImage(input: ImageInput): Promise<{ image: BrowserImage; release: () => void }> {
+  if (isBrowserImage(input.data)) {
+    return { image: input.data, release: () => {} }
+  }
+
+  if (typeof Blob === 'undefined' || !(input.data instanceof Blob)) {
+    throw new Error('Unsupported photo input: expected a Blob or decoded browser image')
+  }
+
+  const objectUrl = URL.createObjectURL(input.data)
+  try {
+    const image = new Image()
+    if (typeof image.decode === 'function') {
+      image.src = objectUrl
+      await image.decode()
+    } else {
+      await new Promise<void>((resolve, reject) => {
+        image.onload = () => resolve()
+        image.onerror = () => reject(new Error('Unable to decode the selected photo'))
+        image.src = objectUrl
+      })
+    }
+    return { image, release: () => URL.revokeObjectURL(objectUrl) }
+  } catch (error) {
+    URL.revokeObjectURL(objectUrl)
+    throw error
   }
 }
 
 export class WebFaceShapeAnalyzer implements FaceShapeAnalyzer {
-  private sdkPromise: Promise<VisuTrySDK> | null = null
+  private analyzerPromise: Promise<ImageAnalyzer> | null = null
 
-  private async getSdk(): Promise<VisuTrySDK> {
-    if (!this.sdkPromise) {
-      this.sdkPromise = (async () => {
-        const { createVisuTryWebSDK } = await import('@visutry/tryon-web')
-
-        // SDK 1.0 requires a canvas for the Three.js renderer.
-        // For face-shape-only analysis, create an offscreen canvas.
-        const canvas = document.createElement('canvas')
-        canvas.width = 1
-        canvas.height = 1
-        canvas.style.display = 'none'
-        document.body.appendChild(canvas)
-
-        const sdk = createVisuTryWebSDK({
-          canvas,
-          tracker: { mode: 'balanced' },
-          privacy: { processOnDeviceOnly: true, allowAnalytics: true },
+  private getAnalyzer(): Promise<ImageAnalyzer> {
+    if (!this.analyzerPromise) {
+      this.analyzerPromise = import('@visutry/tryon-web/analyzer')
+        .then(({ createVisuTryImageAnalyzer }) => createVisuTryImageAnalyzer())
+        .catch((error: unknown) => {
+          // A failed import/initialization must not poison every retry.
+          this.analyzerPromise = null
+          throw error
         })
-        await sdk.initialize()
-        return sdk
-      })()
     }
-    return this.sdkPromise
+    return this.analyzerPromise
   }
 
-  async analyze(_image: ImageInput): Promise<FaceGeometryAnalysis> {
+  async analyze(input: ImageInput): Promise<FaceGeometryAnalysis> {
     if (!SDK_ENABLED) {
-      return {
-        version: 'landmark-v1',
-        status: 'unavailable',
-        source: 'mediapipe-face-landmarker',
-        faceDetected: false,
-        faceCount: 0,
-        qualityScore: 0,
-        signals: [],
-        warnings: ['SDK face analysis disabled (VITE_FACE_SHAPE_SDK_ENABLED != true)'],
-      }
+      return unavailable('SDK photo analysis disabled (VITE_FACE_SHAPE_SDK_ENABLED != true)')
     }
 
+    let release: () => void = () => {}
     try {
-      const sdk = await this.getSdk()
-      const result: FaceShapeResult = await sdk.analyzeFaceShape()
+      const normalized = await resolveImage(input)
+      release = normalized.release
+      const analyzer = await this.getAnalyzer()
+      const result = await analyzer.analyzeFaceShapeFromImage(normalized.image)
       return mapFaceShape(result)
     } catch (error) {
-      return {
-        version: 'landmark-v1',
-        status: 'unavailable',
-        source: 'mediapipe-face-landmarker',
-        faceDetected: false,
-        faceCount: 0,
-        qualityScore: 0,
-        signals: [],
-        warnings: [
-          error instanceof Error
-            ? `SDK face analysis failed: ${error.message}`
-            : 'SDK face analysis failed.',
-        ],
-      }
+      return unavailable(
+        error instanceof Error ? `SDK photo analysis failed: ${error.message}` : 'SDK photo analysis failed',
+      )
+    } finally {
+      release()
     }
   }
 
   async destroy(): Promise<void> {
-    if (this.sdkPromise) {
+    const current = this.analyzerPromise
+    this.analyzerPromise = null
+    if (current) {
       try {
-        const sdk = await this.sdkPromise
-        sdk.destroy()
+        ;(await current).destroy()
       } catch {
-        // ignore
+        // Import can fail before an SDK instance exists.
       }
-      this.sdkPromise = null
     }
   }
 }
