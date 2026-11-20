@@ -26,5 +26,7 @@ jobs:
         run: pnpm build
       - name: Typecheck
         run: pnpm typecheck
-      - name: Unit and contract tests
+      - name: Mobile unit and contract tests (isolated)
         run: pnpm test
+      - name: Pinned SDK tests with SDK-owned jsdom/coverage configuration
+        run: pnpm --dir packages/visutry-tryon-sdk test:coverage
