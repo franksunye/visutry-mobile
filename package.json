@@ -16,8 +16,8 @@
     "preview": "vite preview --host",
     "lint": "eslint . --ext ts,tsx",
     "typecheck": "tsc -b --noEmit",
-    "test": "vitest run src",
-    "test:watch": "vitest src"
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@visutry/tryon-core": "workspace:*",
