@@ -5,7 +5,7 @@
   "description": "VisuTry mobile PWA — single-page web app with cross-platform evolution path (WeChat Mini Program ready).",
   "type": "module",
   "engines": {
-    "node": ">=18.0.0",
+    "node": ">=20.0.0",
     "pnpm": ">=9.0.0"
   },
   "packageManager": "pnpm@10.31.0",
